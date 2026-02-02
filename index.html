@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="KMC Security Operations Cloud Platform">
+    
+    <title>KMC SiteOps V10.3 (Enterprise Security)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+        KMC 工业级深色主题 (KMC Industrial Dark Theme)
+        Designed for High Contrast & Night Operations
+        ========================================= 
+        */
+
+        :root {
+            /* 核心背景色 */
+            --bg: #0d1117; 
+            --panel: #161b22; 
+            
+            /* 边框与分割线 */
+            --border: #30363d; 
+            
+            /* 文本颜色 */
+            --text: #e6edf3; 
+            --text-muted: #8b949e; 
+            
+            /* 功能色板 */
+            --primary: #1f6feb;   /* 蓝色：常规操作 */
+            --success: #238636;   /* 绿色：成功/安全 */
+            --danger: #da3633;    /* 红色：危险/紧急 */
+            --warning: #d29922;   /* 黄色：警告/注意 */
+            --kmc-gold: #f0b429;  /* 金色：品牌色/高亮 */
+        }
+
+        /* -----------------------------------------
+        基础全局重置 (Base Reset)
+        -----------------------------------------
+        */
+        body { 
+            background-color: var(--bg); 
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
+            user-select: none; /* 禁止选中文本，类似原生App体验 */
+            color: var(--text); 
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior: none; /* 防止下拉刷新导致页面抖动 */
+            margin: 0;
+            padding: 0;
+        }
+
+        /* -----------------------------------------
+        主应用容器 (App Container)
+        -----------------------------------------
+        限制最大宽度，模拟移动端 App 视窗
+        */
+        .app-container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: var(--bg); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            border-left: 1px solid #21262d; 
+            border-right: 1px solid #21262d; 
+            position: relative; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* -----------------------------------------
+        组件：工业风卡片 (Industrial Card)
+        -----------------------------------------
+        */
+        .ind-card { 
+            background: var(--panel); 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            margin-bottom: 12px; 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .ind-card:active {
+            transform: scale(0.995); /* 点击时的微缩效果 */
+        }
+
+        /* -----------------------------------------
+        组件：输入框体系 (Input System)
+        -----------------------------------------
+        */
+        .ind-input { 
+            background: #010409; 
+            border: 1px solid var(--border); 
+            color: var(--text); 
+            border-radius: 6px; 
+            width: 100%; 
+            font-size: 14px; 
+            padding: 12px; 
+            transition: all 0.3s ease; 
+        }
+
+        .ind-input:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1);
+        }
+
+        .ind-input::placeholder { 
+            color: #484f58; 
+            font-style: italic; 
+        }
+
+        /* -----------------------------------------
+        核心功能：强制翻译视觉反馈 (Red/Green Logic)
+        -----------------------------------------
+        */
+        @keyframes pulse-red { 
+            0% { box-shadow: 0 0 0 0 rgba(218, 54, 51, 0.7); } 
+            70% { box-shadow: 0 0 0 6px rgba(218, 54, 51, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(218, 54, 51, 0); } 
+        }
+        
+        /* 状态：未翻译 (红色警告背景) */
+        .ind-input.untranslated { 
+            border: 1px solid var(--danger); 
+            background: rgba(218, 54, 51, 0.05); 
+        }
+        
+        /* 状态：已翻译 (绿色通过背景) */
+        .ind-input.translated { 
+            border: 1px solid var(--success); 
+            background: rgba(35, 134, 54, 0.05); 
+        }
+
+        .input-wrapper { 
+            position: relative; 
+            width: 100%; 
+            display: flex; 
+            align-items: center; 
+        }
+        
+        .input-wrapper .ind-input { 
+            padding-right: 90px; /* 为右侧翻译按钮预留空间 */
+        } 
+        
+        /* -----------------------------------------
+        组件：翻译按钮 (Translate Button)
+        -----------------------------------------
+        */
+        .trans-btn { 
+            position: absolute; 
+            right: 8px; 
+            border-radius: 4px; 
+            padding: 0 10px; 
+            font-size: 11px; 
+            cursor: pointer; 
+            height: 32px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            transition: 0.2s; 
+            z-index: 10;
+        }
+        
+        /* 待翻译状态 */
+        .trans-btn.pending { 
+            background: #161b22; 
+            color: var(--danger); 
+            border: 1px solid var(--danger);
+            animation: pulse-red 2s infinite; /* 呼吸灯效果提醒用户 */
+        }
+        
+        /* 已完成状态 */
+        .trans-btn.done { 
+            background: var(--success); 
+            color: white; 
+            border: 1px solid var(--success);
+        }
+        
+        /* 针对文本域的特殊定位 */
+        .input-wrapper.textarea .trans-btn { 
+            top: 10px; 
+        }
+
+        /* -----------------------------------------
+        组件：按钮系统 (Button System)
+        -----------------------------------------
+        */
+        .btn { 
+            font-weight: 700; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            user-select: none;
+        }
+        
+        .btn:active { 
+            transform: scale(0.96); 
+            opacity: 0.9; 
+        }
+        
+        .btn:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            filter: grayscale(1); 
+            background: #21262d !important; 
+            color: #484f58 !important; 
+            border: 1px solid #30363d !important; 
+        }
+        
+        /* 按钮变体 */
+        .btn-primary { 
+            background: var(--primary); 
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        .btn-success { 
+            background: var(--success); 
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        .btn-danger { 
+            background: var(--danger); 
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        .btn-warning { 
+            background: var(--warning); 
+            color: black; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        .btn-ghost { 
+            background: var(--panel); 
+            border: 1px solid var(--border); 
+            color: var(--text); 
+        }
+
+        /* -----------------------------------------
+        组件：模态弹窗 (Modal Overlay)
+        -----------------------------------------
+        */
+        .modal-overlay { 
+            position: fixed; 
+            inset: 0; 
+            z-index: 999; 
+            background: rgba(0, 0, 0, 0.9); 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            align-items: center; 
+            justify-content: center; 
+            backdrop-filter: blur(5px); 
+        }
+        
+        .modal-content { 
+            width: 100%; 
+            max-width: 400px; 
+            background: #1c2128; 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 24px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); 
+            animation: fadeIn 0.3s ease; 
+        }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* -----------------------------------------
+        组件：底部导航栏 (Bottom Navigation)
+        -----------------------------------------
+        */
+        .nav-bar { 
+            display: flex; 
+            background: #0d1117; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 2px; 
+        }
+        
+        .nav-item { 
+            flex: 1; 
+            color: var(--text-muted); 
+            padding: 14px 0; 
+            font-size: 10px; 
+            font-weight: 600; 
+            text-align: center; 
+            border-bottom: 3px solid transparent; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+        }
+        
+        .nav-item.active { 
+            color: var(--text); 
+            background: rgba(255,255,255,0.03); 
+        }
+        
+        .nav-item i { 
+            font-size: 18px; 
+            margin-bottom: 2px; 
+        }
+        
+        /* -----------------------------------------
+        组件：紧急警报条 (Alert Bar)
+        -----------------------------------------
+        */
+        .alert-bar { 
+            background: var(--danger); 
+            color: white; 
+            padding: 12px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-align: center; 
+            cursor: pointer; 
+            animation: flash 2s infinite; 
+            border-bottom: 1px solid rgba(0,0,0,0.3); 
+        }
+        
+        @keyframes flash { 
+            0%, 100% { background: var(--danger); } 
+            50% { background: #b91c1c; } 
+        }
+
+        /* -----------------------------------------
+        组件：Loading 加载层
+        -----------------------------------------
+        */
+        .loading-overlay { 
+            position: fixed; 
+            inset: 0; 
+            z-index: 2000; 
+            background: rgba(13, 17, 23, 0.95); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            backdrop-filter: blur(4px); 
+        }
+        
+        .spinner { 
+            width: 40px; 
+            height: 40px; 
+            border: 4px solid #30363d; 
+            border-top: 4px solid #f0b429; 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+            margin-bottom: 15px; 
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        /* -----------------------------------------
+        组件：存储空间指示条
+        -----------------------------------------
+        */
+        .storage-bar-bg { 
+            width: 100%; 
+            height: 8px; 
+            background: #30363d; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            margin-top: 8px; 
+        }
+        
+        .storage-bar-fill { 
+            height: 100%; 
+            transition: width 0.5s ease; 
+        }
+
+        /* -----------------------------------------
+        打印与 PDF 导出适配 (Print & Export)
+        -----------------------------------------
+        */
+        @media print {
+            .app-container { border: none; width: 100%; max-width: none; }
+            .btn, .trans-btn, .no-print, header, .nav-bar, .alert-bar, .modal-overlay, .loading-overlay { display: none !important; } 
+            .ind-card { break-inside: avoid; border: 1px solid #000; box-shadow: none; }
+            body { background: white; color: black; }
+            * { color: black !important; background: white !important; border-color: #000 !important; }
+        }
+
+        /* PDF 导出专用样式 (模拟 A4 纸张效果) */
+        .pdf-export-mode { 
+            background-color: white !important; 
+            color: black !important; 
+            padding: 20px !important; 
+            font-family: 'Times New Roman', serif, sans-serif !important; 
+        }
+        
+        .pdf-export-mode .ind-card { 
+            background-color: white !important; 
+            border: 1px solid #000 !important; 
+            box-shadow: none !important; 
+            color: black !important; 
+            break-inside: avoid !important; 
+            margin-bottom: 20px !important; 
+            page-break-inside: avoid !important; 
+        }
+        
+        /* 强制 PDF 模式下背景变白，文字变黑 */
+        .pdf-export-mode .bg-\[\#010409\], 
+        .pdf-export-mode .bg-\[\#161b22\], 
+        .pdf-export-mode .bg-\[\#0d1117\] { 
+            background-color: #f9fafb !important; 
+            color: black !important; 
+            border-color: #e5e7eb !important; 
+        }
+        
+        .pdf-export-mode h2, 
+        .pdf-export-mode h3, 
+        .pdf-export-mode h4, 
+        .pdf-export-mode span, 
+        .pdf-export-mode p { 
+            color: black !important; 
+        }
+        
+        .pdf-export-mode button, 
+        .pdf-export-mode .trans-btn, 
+        .pdf-export-mode .no-pdf { 
+            display: none !important; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="app-container">
+
+    <div v-if="isLoading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="text-[#f0b429] font-bold text-sm uppercase tracking-widest">KMC SECURITY CLOUD</p>
+        <p class="text-[#8b949e] text-xs mt-2">Syncing with KMC Database...</p>
+        <p class="text-[10px] text-[#30363d] font-mono mt-4">Node: Supabase</p>
+    </div>
+
+    <div v-if="showStorageModal" class="modal-overlay">
+        <div class="modal-content animate-fade-in border-l-4" :class="storagePercent > 80 ? 'border-l-[#da3633]' : 'border-l-[#238636]'">
+            <div class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-4">
+                <h3 class="font-bold text-lg text-[#c9d1d9]">Database Storage / 空间管理</h3>
+                <button @click="showStorageModal = false" class="text-gray-400 hover:text-white px-2"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="mb-6 text-center">
+                <p class="text-4xl font-bold mb-2" :class="getStorageColorClass(storagePercent)">{{ storageUsageCount }} <span class="text-base text-[#8b949e]">/ {{ storageLimit }} items</span></p>
+                <div class="storage-bar-bg">
+                    <div class="storage-bar-fill" :style="{width: storagePercent + '%', backgroundColor: getStorageColor(storagePercent)}"></div>
+                </div>
+                <p class="text-xs text-[#8b949e] mt-2">
+                    {{ storagePercent > 90 ? 'CRITICAL FULL! ACTION REQUIRED' : (storagePercent > 70 ? 'Running Low' : 'Space Available') }}
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-3 bg-[#010409] rounded border border-[#30363d]">
+                    <p class="text-[10px] font-bold text-[#8b949e] uppercase mb-2">Step 1: Backup Data (Required)</p>
+                    <button @click="exportDatabase" class="btn btn-primary w-full py-3 text-xs">
+                        <i class="fas fa-download mr-2"></i> Download Full Backup (.JSON)
+                    </button>
+                </div>
+
+                <div class="p-3 bg-[#010409] rounded border border-[#30363d]">
+                    <p class="text-[10px] font-bold text-[#da3633] uppercase mb-2">Step 2: Free Up Space</p>
+                    <button @click="clearDatabase" :disabled="!hasBackedUp" class="btn w-full py-3 text-xs" :class="hasBackedUp ? 'btn-danger' : 'btn-ghost'">
+                        <i class="fas fa-trash-alt mr-2"></i> {{ hasBackedUp ? 'Clear All History / 清空历史数据' : 'Backup First to Unlock / 请先备份' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showListManager" class="modal-overlay">
+        <div class="modal-content animate-fade-in">
+            <div class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-4">
+                <div>
+                    <h3 class="font-bold text-lg text-[#c9d1d9]">Manage List / 管理列表</h3>
+                    <p class="text-xs text-[#8b949e]">{{ listManagerTitle }}</p>
+                </div>
+                <button @click="showListManager = false" class="text-gray-400 hover:text-white px-2"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="space-y-3 mb-6 max-h-64 overflow-y-auto pr-1">
+                <div v-for="(item, index) in currentEditingList" :key="index" class="flex justify-between items-center bg-[#0d1117] p-3 rounded border border-[#30363d]">
+                    <span class="text-sm font-bold">{{ item }}</span>
+                    <button v-if="isManagement" @click="removeListItem(index)" class="text-[#da3633] hover:text-red-400 text-xs border border-[#da3633] px-2 py-1 rounded"><i class="fas fa-trash"></i> Del/删</button>
+                </div>
+            </div>
+            
+            <div class="pt-4 border-t border-[#30363d]">
+                <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-2">Add New Item / 新增项目</label>
+                <div class="input-wrapper mb-4">
+                    <input v-model="newItemName" class="ind-input" :class="isTranslated(newItemName)?'translated':'untranslated'" placeholder="Enter name / 输入名称...">
+                    <button @click="autoTranslate('newItemName', this)" class="trans-btn" :class="isTranslated(newItemName)?'done':'pending'">
+                         <i class="fas" :class="isTranslated(newItemName)?'fa-check':'fa-language'"></i> {{ isTranslated(newItemName)?'OK':'A/文' }}
+                    </button>
+                </div>
+                <button @click="addListItem" class="btn btn-primary w-full py-3 text-xs" :disabled="newItemName && !isTranslated(newItemName)"><i class="fas fa-plus mr-2"></i> Confirm Add / 确认新增</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showSigModal" class="modal-overlay">
+        <div class="w-full h-full flex flex-col max-w-lg">
+            <div class="flex justify-between items-center mb-4 text-[#c9d1d9] border-b border-[#30363d] pb-4">
+                <span class="font-bold uppercase text-lg"><i class="fas fa-pen-nib mr-2"></i> {{ sigTitle }}</span>
+                <button @click="closeSigModal" class="text-gray-400 hover:text-white px-4"><i class="fas fa-times text-2xl"></i></button>
+            </div>
+            <div class="flex-1 bg-white rounded-lg border-2 border-dashed border-[#8b949e] relative overflow-hidden mb-6">
+                <canvas id="signature-pad" class="w-full h-full cursor-crosshair"></canvas>
+                <div class="absolute bottom-2 left-2 text-[10px] text-gray-400 select-none">Sign Here / 在此区域书写</div>
+            </div>
+            <div class="flex gap-4">
+                <button @click="clearSignature" class="btn btn-ghost flex-1 py-4"><i class="fas fa-eraser mr-2"></i> Clear / 重写</button>
+                <button @click="saveSignature" class="btn btn-success flex-1 py-4"><i class="fas fa-check mr-2"></i> Confirm / 确认</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showUserModal" class="modal-overlay">
+        <div class="modal-content animate-fade-in">
+            <div class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-4">
+                <div>
+                    <h3 class="font-bold text-lg text-[#c9d1d9]">{{ userModalMode === 'add' ? 'Add User / 新增用户' : 'Edit User / 编辑用户' }}</h3>
+                </div>
+                <button @click="showUserModal = false" class="text-gray-400 hover:text-white px-2"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Full Name / 姓名</label>
+                    <div class="input-wrapper">
+                        <input v-model="tempUser.name" class="ind-input" :class="isTranslated(tempUser.name)?'translated':'untranslated'" placeholder="Name / 姓名">
+                        <button @click="autoTranslate('name', tempUser)" class="trans-btn" :class="isTranslated(tempUser.name)?'done':'pending'">
+                             <i class="fas" :class="isTranslated(tempUser.name)?'fa-check':'fa-language'"></i> {{ isTranslated(tempUser.name)?'OK':'A/文' }}
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Login ID / 账号 (Unique)</label>
+                    <input v-model="tempUser.login_id" class="ind-input" placeholder="Ex: P05, V01..." :disabled="userModalMode==='edit'">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Role / 角色</label>
+                    <select v-model="tempUser.role" class="ind-input appearance-none">
+                        <option value="patrol">Internal Patrol / 内部安保</option>
+                        <option value="vendor">External Vendor / 分包商</option>
+                        <option value="manager">Manager / 经理 (Admin)</option>
+                        <option value="admin">Director / 总监</option>
+                    </select>
+                </div>
+                <div v-if="tempUser.role === 'patrol'">
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Team / 班组</label>
+                    <select v-model="tempUser.team" class="ind-input appearance-none">
+                        <option v-for="t in teamList" :key="t" :value="t">{{t}}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Password / 密码</label>
+                    <input v-model="tempUser.password" type="text" class="ind-input font-mono" placeholder="Set Password / 设置密码">
+                </div>
+                <button @click="saveUserToCloud" class="btn btn-primary w-full py-3 mt-4" :disabled="!isTranslated(tempUser.name)">
+                    <i v-if="!isTranslated(tempUser.name)" class="fas fa-lock mr-2"></i>
+                    {{ !isTranslated(tempUser.name) ? 'TRANSLATE NAME FIRST / 请先翻译姓名' : 'SAVE USER / 保存用户' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="showPwdModal" class="modal-overlay">
+        <div class="modal-content animate-fade-in">
+             <div class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-4">
+                <h3 class="font-bold text-lg text-[#c9d1d9]">Change Password / 修改密码</h3>
+                <button @click="showPwdModal = false" class="text-gray-400 hover:text-white px-2"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">New Password / 新密码</label>
+                    <input v-model="pwdForm.new" type="password" class="ind-input text-center text-lg tracking-widest" placeholder="****">
+                </div>
+                 <div>
+                    <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Confirm / 确认新密码</label>
+                    <input v-model="pwdForm.confirm" type="password" class="ind-input text-center text-lg tracking-widest" placeholder="****">
+                </div>
+                <button @click="changePassword" class="btn btn-success w-full py-3">CONFIRM / 确认修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="!currentUser" class="absolute inset-0 z-[50] flex flex-col items-center justify-center p-8 bg-[#0d1117]">
+        <div class="mb-12 text-center">
+            <div class="w-24 h-24 bg-[#161b22] border border-[#30363d] rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl relative">
+                <i class="fas fa-shield-alt text-5xl text-[#f0b429]"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-[#e6edf3]">KMC <span class="text-[#f0b429]">SiteOps</span></h1>
+            <p class="text-[#8b949e] text-sm mt-2 uppercase tracking-widest">Security Cloud / 云端安保</p>
+        </div>
+        <div class="w-full ind-card p-8 bg-[#161b22]">
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-[#8b949e] mb-2 uppercase">Select Identity / 选择身份</label>
+                <div class="relative">
+                    <select v-model="loginForm.id" class="ind-input p-3 font-bold text-lg appearance-none">
+                        <option value="" disabled>Tap to select / 点击选择...</option>
+                        <optgroup label="Management / 管理层">
+                            <option v-for="user in staffList.filter(u => ['admin','manager'].includes(u.role))" :key="user.id" :value="user.login_id">
+                                {{ user.name }} ({{ user.login_id }})
+                            </option>
+                        </optgroup>
+                        <optgroup label="Internal Patrol / 内部巡逻员">
+                            <option v-for="user in staffList.filter(u => u.role === 'patrol')" :key="user.id" :value="user.login_id">
+                                {{ user.name }}
+                            </option>
+                        </optgroup>
+                        <optgroup label="External Vendor / 外部安保">
+                            <option v-for="user in staffList.filter(u => u.role === 'vendor')" :key="user.id" :value="user.login_id">
+                                {{ user.name }}
+                            </option>
+                        </optgroup>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-4 top-4 text-[#8b949e] pointer-events-none"></i>
+                </div>
+            </div>
+            <div class="mb-8">
+                <label class="block text-xs font-bold text-[#8b949e] mb-2 uppercase">Passkey / 密码</label>
+                <input type="password" v-model="loginForm.password" placeholder="Enter Password" class="ind-input p-3 font-mono text-center tracking-widest text-lg">
+            </div>
+            <button @click="handleLogin" class="btn btn-success w-full py-4 text-sm shadow-lg hover:shadow-green-900/30 transition-all"><i class="fas fa-fingerprint mr-2"></i> Login / 登录系统</button>
+            <div class="text-center mt-4">
+                 <button @click="fetchData(true)" class="text-[10px] text-[#1f6feb] underline">Sync User Data / 同步用户数据</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-else class="flex flex-col h-full bg-[#0d1117]">
+        
+        <div v-if="isManagement && unreadAlerts.length > 0" class="alert-bar" @click="currentView = 'reports'; filterType = 'emergency'">
+            <i class="fas fa-radiation-alt mr-2 animate-bounce"></i> {{ unreadAlerts.length }} EMERGENCY ALERTS / 收到紧急警报
+        </div>
+
+        <header class="bg-[#161b22] border-b border-[#30363d] p-4 sticky top-0 z-40 flex justify-between items-center no-print shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded bg-[#21262d] border border-[#30363d] flex items-center justify-center font-bold text-sm text-[#f0b429]">{{ currentUser.name[0] }}</div>
+                <div>
+                    <h1 class="font-bold text-sm text-[#e6edf3] flex items-center gap-2">
+                        {{ currentUser.name }} 
+                        <span class="bg-[#238636] text-white text-[9px] px-1.5 py-0.5 rounded uppercase">{{ currentUser.role }}</span>
+                        
+                        <div class="ml-2 w-6 h-6 flex items-center justify-center rounded-full border border-[#30363d] transition-all duration-300"
+                             :class="{'bg-[#238636]': netStatus==='online', 'bg-[#d29922] animate-pulse': netStatus==='syncing', 'bg-[#da3633]': netStatus==='offline'}"
+                             title="Cloud Status">
+                            <i class="fas fa-cloud text-[10px] text-white"></i>
+                        </div>
+                    </h1>
+                    <p class="text-[10px] text-[#8b949e] uppercase font-mono tracking-tight">{{ currentUser.login_id }}</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button @click="fetchData(true)" class="btn btn-ghost px-3 py-1 text-xs border-[#30363d] text-[#1f6feb]" title="Force Sync"><i class="fas fa-sync"></i></button>
+                <button @click="showPwdModal = true" class="btn btn-ghost px-3 py-1 text-xs border-[#30363d] text-[#f0b429]"><i class="fas fa-key"></i></button>
+                <button @click="handleLogout" class="btn btn-ghost px-3 py-1 text-xs border-[#30363d] hover:bg-[#da3633] hover:text-white">Exit</button>
+            </div>
+        </header>
+
+        <div v-if="!isFormView" class="bg-[#0d1117] border-b border-[#30363d] flex sticky top-[73px] z-30 no-print nav-bar">
+            <button @click="currentView = 'tasks'" class="nav-item" :class="{active: currentView==='tasks'}" style="border-bottom-color: #1f6feb"><i class="fas fa-route text-[#1f6feb]"></i>Patrol/巡逻</button>
+            <button @click="goToEmergencyForm" class="nav-item" :class="{active: currentView==='emergency_form'}" style="border-bottom-color: #da3633"><i class="fas fa-bolt text-[#da3633]"></i>SOS/急报</button>
+            <button @click="goToViolationForm" class="nav-item" :class="{active: currentView==='violation_form'}" style="border-bottom-color: #d29922"><i class="fas fa-search text-[#d29922]"></i>Inspect/督察</button>
+            <button @click="currentView = 'reports'" class="nav-item" :class="{active: currentView==='reports'}"><i class="fas fa-file-alt"></i>Log/记录</button>
+            <button v-if="isManagement" @click="currentView = 'team'" class="nav-item" :class="{active: currentView==='team'}"><i class="fas fa-sitemap"></i>Team/管理</button>
+        </div>
+
+        <main class="flex-1 p-4 overflow-y-auto pb-24 scroll-smooth">
+
+            <div v-if="currentView === 'tasks'">
+                <div class="mb-4 pb-2 border-b border-[#30363d] flex justify-between items-end">
+                    <div>
+                        <h2 class="font-bold text-lg text-[#e6edf3]">Routine Patrol / 日常勤务</h2>
+                        <p class="text-[10px] text-[#8b949e]">Internal Execution / 内部队伍执行</p>
+                    </div>
+                    <button v-if="isManagement" @click="goToTaskForm(null)" class="text-[10px] border border-[#30363d] px-2 py-1 rounded bg-[#161b22] text-[#8b949e] hover:text-white"><i class="fas fa-plus"></i> New/新增</button>
+                </div>
+                <div class="space-y-4">
+                    <div v-if="activeTasks.length === 0" class="text-center py-10 text-[#8b949e]">No active tasks from cloud.</div>
+                    <div v-for="task in (isManagement ? tasks : activeTasks)" :key="task.id" class="ind-card p-5 border-l-4 border-l-[#1f6feb] relative group">
+                        <div v-if="isManagement" class="absolute top-4 right-4 z-10" @click.stop>
+                            <input type="checkbox" v-model="task.active" @change="saveTaskToCloud(task, true)" class="w-5 h-5 accent-[#238636] cursor-pointer">
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 rounded bg-[rgba(31,111,235,0.1)] flex items-center justify-center text-[#1f6feb]"><i class="fas fa-route"></i></div>
+                            <h3 class="font-bold text-base text-[#e6edf3]">{{ task.title }}</h3>
+                        </div>
+                        <div class="bg-[#010409] p-3 rounded border border-[#30363d] text-xs text-[#8b949e] mb-3 font-mono line-clamp-2">
+                            <span class="text-[#f0b429] font-bold">CONTENT:</span> {{ task.content }}
+                        </div>
+                        <button v-if="!isManagement" @click="goToTaskExec(task)" class="btn btn-primary w-full py-3 text-xs shadow-lg"><i class="fas fa-play mr-2"></i> START / 开始执行</button>
+                        
+                        <div v-else class="flex gap-2">
+                            <button @click="goToTaskForm(task)" class="btn btn-ghost flex-1 py-2 text-xs border border-[#30363d]"><i class="fas fa-edit mr-2"></i> EDIT / 编辑</button>
+                            <button @click="deleteTaskFromCloud(task.id)" class="btn btn-ghost px-3 py-2 text-xs border border-[#da3633] text-[#da3633] hover:bg-[#da3633] hover:text-white transition-colors" title="Delete Task"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentView === 'emergency_form'" class="min-h-full">
+                <div class="p-4 border-b border-[#30363d] mb-4 bg-[rgba(218,54,51,0.1)] sticky top-0 z-10 border-l-4 border-l-[#da3633]">
+                    <h2 class="text-lg font-bold text-[#da3633] mb-1"><i class="fas fa-radiation-alt mr-2"></i>SPECIAL SITUATION</h2>
+                    <p class="text-[10px] text-[#da3633]">Immediate Reporting / 特殊情况紧急汇报</p>
+                </div>
+                <div class="px-2 space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">* Incident Type / 事故类型</label>
+                        <div class="flex gap-2">
+                            <div class="input-wrapper flex-1">
+                                <select v-model="emergencyForm.type" class="ind-input p-3 font-bold text-[#da3633] appearance-none">
+                                    <option value="" disabled>Select Type / 选择类型...</option>
+                                    <option v-for="t in emergencyTypes" :key="t" :value="t">{{ t }}</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-4 top-4 text-[#8b949e] pointer-events-none"></i>
+                            </div>
+                            <button @click="openListManager('emergencyTypes')" class="btn btn-ghost border border-[#30363d] px-4 text-[#da3633]"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-wrapper textarea">
+                        <label class="block text-[10px] font-bold text-[#da3633] uppercase mb-1">* Details / 详情描述 (必须点击翻译)</label>
+                        <textarea v-model="emergencyForm.note" class="ind-input h-32 p-3" :class="isTranslated(emergencyForm.note)?'translated':'untranslated'" placeholder="Describe car crash, flood, etc... / 描述车祸、洪水等..."></textarea>
+                        <button @click="verifyTranslate('emergencyForm')" class="trans-btn" :class="isTranslated(emergencyForm.note)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(emergencyForm.note)?'fa-check':'fa-language'"></i> {{ isTranslated(emergencyForm.note)?'OK':'A/文' }}
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">* Live Evidence / 现场影像</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div v-for="(photo, idx) in emergencyForm.photos" :key="idx" class="relative aspect-square bg-black rounded border border-[#da3633] overflow-hidden group">
+                                <img :src="photo" class="w-full h-full object-cover">
+                                <button @click="removePhoto('emergencyForm', idx)" class="absolute top-0 right-0 bg-[#da3633] text-white w-6 h-6 flex items-center justify-center rounded-bl text-[10px] hover:bg-red-600 transition shadow-md z-10">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="border-2 border-dashed border-[#da3633] bg-[#010409] rounded flex flex-col items-center justify-center cursor-pointer relative aspect-square hover:bg-[rgba(218,54,51,0.1)] transition">
+                                <input type="file" accept="image/*" capture="environment" @change="handlePhotoUpload" class="absolute inset-0 opacity-0 z-10 w-full h-full cursor-pointer">
+                                <i class="fas fa-camera text-2xl text-[#da3633]"></i>
+                                <p class="text-[9px] text-[#da3633] mt-1 font-bold text-center leading-tight">CAMERA ONLY<br>仅限拍照</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button @click="submitEmergency" :disabled="!isTranslated(emergencyForm.note)" class="btn btn-danger w-full py-4 mt-6 shadow-lg text-sm tracking-wide">
+                        <i v-if="!isTranslated(emergencyForm.note)" class="fas fa-lock mr-2"></i>
+                        {{ !isTranslated(emergencyForm.note) ? 'MUST TRANSLATE FIRST / 请先翻译' : 'SEND ALERT / 发送警报' }}
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="currentView === 'violation_form'" class="min-h-full">
+                <div class="p-4 border-b border-[#30363d] mb-4 bg-[rgba(210,153,34,0.1)] sticky top-0 z-10 border-l-4 border-l-[#d29922]">
+                    <h2 class="text-lg font-bold text-[#d29922] mb-1"><i class="fas fa-gavel mr-2"></i>JOINT INSPECTION</h2>
+                    <p class="text-[10px] text-[#d29922]">Fact Consensus / 双方需共同签字确认</p>
+                </div>
+                <div class="px-2 space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">* Target Vendor / 违规分包商</label>
+                        <div class="flex gap-2">
+                            <div class="input-wrapper flex-1">
+                                <select v-model="violationForm.vendor" class="ind-input p-3 font-bold text-[#d29922] appearance-none">
+                                    <option value="" disabled>Select Vendor / 选择单位...</option>
+                                    <option v-for="v in vendorList" :key="v" :value="v">{{ v }}</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-4 top-4 text-[#8b949e] pointer-events-none"></i>
+                            </div>
+                            <button @click="openListManager('vendors')" class="btn btn-ghost border border-[#30363d] px-4"><i class="fas fa-cog"></i></button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Violation Type / 违规类型</label>
+                        <div class="flex gap-2">
+                            <div class="input-wrapper flex-1">
+                                <select v-model="violationForm.type" class="ind-input p-3 appearance-none">
+                                    <option value="Sleeping on Duty">Sleeping / 睡岗</option>
+                                    <option value="Missing / AWOL">AWOL / 擅离职守</option>
+                                    <option value="Uniform Issue">Uniform / 着装不整</option>
+                                    <option v-for="vt in customViolationTypes" :key="vt" :value="vt">{{ vt }}</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-4 top-4 text-[#8b949e] pointer-events-none"></i>
+                            </div>
+                            <button @click="openListManager('violationTypes')" class="btn btn-ghost border border-[#30363d] px-4"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper textarea">
+                        <label class="block text-[10px] font-bold text-[#da3633] uppercase mb-1">* Fact Description / 事实描述</label>
+                        <textarea v-model="executionForm.note" class="ind-input h-24 p-3" :class="isTranslated(executionForm.note)?'translated':'untranslated'" placeholder="Facts... / 描述事实..."></textarea>
+                        <button @click="verifyTranslate('executionForm')" class="trans-btn" :class="isTranslated(executionForm.note)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(executionForm.note)?'fa-check':'fa-language'"></i> {{ isTranslated(executionForm.note)?'OK':'A/文' }}
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#da3633] uppercase mb-2">* Consensus Signatures / 双方签字 (必签)</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div @click="openSigModal('officer')" class="ind-input p-4 text-center cursor-pointer hover:bg-[#161b22] border border-dashed border-[#1f6feb] flex flex-col items-center justify-center min-h-[100px] transition">
+                                <i class="fas fa-user-shield text-[#1f6feb] text-2xl mb-2"></i>
+                                <p class="text-[10px] text-[#1f6feb] font-bold mb-1">KMC OFFICER</p>
+                                <p class="text-[10px] text-[#8b949e]">巡逻员签字</p>
+                                <div v-if="hasSignedOfficer" class="mt-2 text-[#238636] font-bold text-xs bg-[rgba(35,134,54,0.1)] px-2 py-1 rounded"><i class="fas fa-check"></i> SIGNED</div>
+                            </div>
+                            <div @click="openSigModal('vendor')" class="ind-input p-4 text-center cursor-pointer hover:bg-[#161b22] border border-dashed border-[#da3633] flex flex-col items-center justify-center min-h-[100px] transition">
+                                <i class="fas fa-user-tag text-[#da3633] text-2xl mb-2"></i>
+                                <p class="text-[10px] text-[#da3633] font-bold mb-1">VENDOR REP</p>
+                                <p class="text-[10px] text-[#8b949e]">当事人签字</p>
+                                <div v-if="hasSignedVendor" class="mt-2 text-[#238636] font-bold text-xs bg-[rgba(35,134,54,0.1)] px-2 py-1 rounded"><i class="fas fa-check"></i> SIGNED</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button @click="submitViolation" :disabled="!isTranslated(executionForm.note) || !hasSignedOfficer || !hasSignedVendor" class="btn btn-warning w-full py-4 mt-4 shadow-lg text-sm font-bold text-white">
+                        <i v-if="!isTranslated(executionForm.note)" class="fas fa-lock mr-2"></i>
+                        {{ !isTranslated(executionForm.note) ? 'MUST TRANSLATE FIRST / 请先翻译' : 'CONFIRM FACTS / 确认违规事实' }}
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="currentView === 'reports'" id="report-section">
+                <div class="ind-card p-4 mb-4 no-print">
+                    <h3 class="font-bold text-xs text-[#8b949e] mb-3 uppercase"><i class="fas fa-filter"></i> Type Filter / 类型筛选</h3>
+                    <div class="flex gap-2 flex-wrap">
+                        <button @click="filterType = 'all'" class="btn flex-1 py-2 text-[10px]" :class="filterType==='all'?'btn-primary':'btn-ghost'">ALL/全部</button>
+                        <button @click="filterType = 'emergency'" class="btn flex-1 py-2 text-[10px]" :class="filterType==='emergency'?'btn-danger':'btn-ghost'">SOS/急报</button>
+                        <button @click="filterType = 'violation'" class="btn flex-1 py-2 text-[10px]" :class="filterType==='violation'?'btn-warning text-white':'btn-ghost'">INSPECT/督察</button>
+                        <button @click="filterType = 'duty'" class="btn flex-1 py-2 text-[10px]" :class="filterType==='duty'?'btn-success':'btn-ghost'">WORK/勤务</button>
+                    </div>
+                    <button @click="generatePDF" class="btn btn-ghost w-full mt-3 text-xs border-t border-[#30363d] pt-3 hover:bg-[#161b22]"><i class="fas fa-file-pdf mr-2"></i> Export PDF / 导出标准凭证</button>
+                </div>
+                <div id="report-list-container" class="space-y-4">
+                    <div v-if="filteredSubmissions.length === 0" class="text-center text-[#8b949e] py-4">No records found. / 无记录</div>
+                    <div v-for="sub in filteredSubmissions" :key="sub.id" class="ind-card overflow-hidden break-inside-avoid print:border-black print:text-black print:bg-white" 
+                         :class="{'border-[#da3633]': sub.type === 'emergency', 'border-[#d29922]': sub.type === 'violation', 'border-[#238636]': sub.type === 'duty'}">
+                        <div class="px-4 py-3 border-b border-[#30363d] flex justify-between items-center print:bg-gray-100 print:border-black" :class="sub.type === 'emergency' ? 'bg-[#2a1212]' : (sub.type === 'violation' ? 'bg-[#1f1a10]' : 'bg-[#161b22]')">
+                            <div class="flex items-center gap-2"><span class="font-bold text-sm text-[#c9d1d9] print:text-black">{{ sub.staff_name }}</span><span v-if="sub.type === 'emergency'" class="bg-[#ff4d4d] text-white text-[9px] px-1.5 rounded font-bold uppercase">SOS</span><span v-else-if="sub.type === 'violation'" class="bg-[#d29922] text-black text-[9px] px-1.5 rounded font-bold uppercase">VIOLATION</span><span v-else class="bg-[#238636] text-white text-[9px] px-1.5 rounded font-bold uppercase">PATROL</span></div><span class="text-[10px] font-mono text-[#8b949e] print:text-black">{{ sub.time }}</span>
+                        </div>
+                        <div class="p-5">
+                            <h4 class="font-bold text-base mb-3 print:text-black">{{ sub.title }}</h4>
+                            <div v-if="sub.title === 'Routine Task' && sub.task_snapshot" class="mb-3 text-xs bg-[#010409] p-2 border border-[#30363d] rounded">
+                                <p><span class="text-[#8b949e]">Content:</span> {{ sub.task_snapshot.content }}</p>
+                                <p><span class="text-[#8b949e]">Items:</span> {{ sub.task_snapshot.items }}</p>
+                            </div>
+                            <div class="text-xs text-[#8b949e] bg-[#010409] p-3 rounded border border-[#30363d] font-mono print:bg-white print:border-black print:text-black"><span class="font-bold print:text-black" :class="sub.type==='emergency'?'text-[#da3633]':'text-[#d29922]'">NOTE:</span> {{ sub.note }}</div>
+                            
+                            <div v-if="sub.sigs && (sub.sigs.officer || sub.sigs.vendor)" class="grid grid-cols-2 gap-2 mt-3">
+                                <div v-if="sub.sigs.officer" class="bg-white p-1 rounded border border-[#30363d]"><img :src="sub.sigs.officer" class="w-full h-10 object-contain"></div>
+                                <div v-if="sub.sigs.vendor" class="bg-white p-1 rounded border border-[#30363d]"><img :src="sub.sigs.vendor" class="w-full h-10 object-contain"></div>
+                            </div>
+                            <div v-if="sub.photos && sub.photos.length > 0" class="flex gap-2 mt-3 overflow-x-auto">
+                                <img v-for="(p, i) in sub.photos" :key="i" :src="p" class="h-16 w-16 object-cover rounded border border-[#30363d]">
+                            </div>
+
+                            <div class="mt-4 pt-3 border-t border-[#30363d]">
+                                <div v-if="sub.review && sub.review.rating" class="bg-[#0d1117] p-3 rounded border border-l-4" :class="sub.review.rating==='pass'?'border-l-[#238636] border-[#30363d]':(sub.review.rating==='improve'?'border-l-[#d29922] border-[#30363d]':'border-l-[#da3633] border-[#30363d]')">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="font-bold text-xs uppercase flex items-center gap-2">
+                                            <span class="px-2 py-0.5 rounded text-[10px] bg-[#161b22] border" :class="getRatingColor(sub.review.rating)">
+                                                <i class="fas" :class="sub.review.rating==='pass'?'fa-check':(sub.review.rating==='improve'?'fa-exclamation':'fa-times')"></i>
+                                                {{ sub.review.rating === 'pass' ? 'PASS / 合格' : (sub.review.rating === 'improve' ? 'IMPROVE / 需改进' : 'FAIL / 不合格') }}
+                                            </span>
+                                        </div>
+                                        <div class="text-[9px] text-[#8b949e] text-right">
+                                            <p>Reviewer: {{ sub.review.reviewer }}</p>
+                                            <p>{{ sub.review.time }}</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-[#e6edf3] font-mono"><span class="text-[#8b949e]">Feedback:</span> {{ sub.review.comment }}</p>
+                                </div>
+                                <div v-else-if="isManagement" class="bg-[#161b22] p-3 rounded border border-[#30363d] border-dashed">
+                                    <h5 class="text-[10px] font-bold text-[#8b949e] uppercase mb-3"><i class="fas fa-tasks mr-1"></i> Quality Review / 质量评分</h5>
+                                    <div class="flex gap-2 mb-3">
+                                        <button @click="setTempRating(sub, 'pass')" class="flex-1 py-2 rounded border text-[10px] font-bold transition hover:opacity-80" :class="sub.tempRating==='pass' ? 'bg-[#238636] text-white border-[#238636]' : 'bg-transparent text-[#238636] border-[#238636]'">PASS / 合格</button>
+                                        <button @click="setTempRating(sub, 'improve')" class="flex-1 py-2 rounded border text-[10px] font-bold transition hover:opacity-80" :class="sub.tempRating==='improve' ? 'bg-[#d29922] text-black border-[#d29922]' : 'bg-transparent text-[#d29922] border-[#d29922]'">IMPROVE / 改进</button>
+                                        <button @click="setTempRating(sub, 'fail')" class="flex-1 py-2 rounded border text-[10px] font-bold transition hover:opacity-80" :class="sub.tempRating==='fail' ? 'bg-[#da3633] text-white border-[#da3633]' : 'bg-transparent text-[#da3633] border-[#da3633]'">FAIL / 不合格</button>
+                                    </div>
+                                    <div v-if="sub.tempRating" class="animate-fade-in">
+                                        <div class="input-wrapper mb-2">
+                                            <input v-model="sub.tempComment" class="ind-input text-xs h-8" :class="isTranslated(sub.tempComment)?'translated':'untranslated'" placeholder="Enter feedback / 输入评语...">
+                                            <button @click="autoTranslate('tempComment', sub)" class="trans-btn h-8 top-0" :class="isTranslated(sub.tempComment)?'done':'pending'">
+                                                <i class="fas" :class="isTranslated(sub.tempComment)?'fa-check':'fa-language'"></i> {{ isTranslated(sub.tempComment)?'OK':'A/文' }}
+                                            </button>
+                                        </div>
+                                        <button @click="submitReview(sub)" class="btn btn-primary w-full py-2 text-xs" :disabled="!isTranslated(sub.tempComment)"><i class="fas fa-save mr-2"></i> SUBMIT REVIEW / 提交评分</button>
+                                    </div>
+                                </div>
+                                <div v-else class="text-center py-2">
+                                    <span class="text-[10px] text-[#8b949e] italic border border-[#30363d] px-3 py-1 rounded-full bg-[#0d1117]"><i class="fas fa-hourglass-half mr-1"></i> Pending Management Review / 等待管理层审核...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentView === 'task_form'" class="min-h-full px-4 pt-4">
+                <div class="mb-4"><h2 class="font-bold text-lg text-[#c9d1d9]">Task Config / 勤务配置</h2></div>
+                <div class="space-y-4">
+                    <div class="input-wrapper">
+                        <input v-model="tempTask.title" class="ind-input" :class="isTranslated(tempTask.title)?'translated':'untranslated'" placeholder="Task Name / 任务名称">
+                        <button @click="autoTranslate('title', tempTask)" class="trans-btn" :class="isTranslated(tempTask.title)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(tempTask.title)?'fa-check':'fa-language'"></i> {{ isTranslated(tempTask.title)?'OK':'A/文' }}
+                        </button>
+                    </div>
+                    <div class="input-wrapper">
+                        <input v-model="tempTask.content" class="ind-input" :class="isTranslated(tempTask.content)?'translated':'untranslated'" placeholder="Task Content / 任务内容">
+                        <button @click="autoTranslate('content', tempTask)" class="trans-btn" :class="isTranslated(tempTask.content)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(tempTask.content)?'fa-check':'fa-language'"></i> {{ isTranslated(tempTask.content)?'OK':'A/文' }}
+                        </button>
+                    </div>
+                    <div class="input-wrapper">
+                        <input v-model="tempTask.items" class="ind-input" :class="isTranslated(tempTask.items)?'translated':'untranslated'" placeholder="Check Items / 检查项目">
+                        <button @click="autoTranslate('items', tempTask)" class="trans-btn" :class="isTranslated(tempTask.items)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(tempTask.items)?'fa-check':'fa-language'"></i> {{ isTranslated(tempTask.items)?'OK':'A/文' }}
+                        </button>
+                    </div>
+                    <div class="input-wrapper textarea">
+                        <textarea v-model="tempTask.standard" class="ind-input h-24 p-3" :class="isTranslated(tempTask.standard)?'translated':'untranslated'" placeholder="Execution Standard / 执行标准"></textarea>
+                        <button @click="autoTranslate('standard', tempTask)" class="trans-btn" :class="isTranslated(tempTask.standard)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(tempTask.standard)?'fa-check':'fa-language'"></i> {{ isTranslated(tempTask.standard)?'OK':'A/文' }}
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between p-2 border border-[#30363d] rounded bg-[#161b22]">
+                        <span class="text-xs text-[#8b949e]">Photo / 拍照</span>
+                        <input type="checkbox" v-model="tempTask.require_photo" class="w-4 h-4 accent-[#1f6feb]">
+                    </div>
+                    <button @click="saveTaskToCloud(tempTask, false)" class="btn btn-primary w-full py-3 text-sm" 
+                            :disabled="!isTranslated(tempTask.title) || !isTranslated(tempTask.content) || !isTranslated(tempTask.items) || !isTranslated(tempTask.standard)">
+                        <i v-if="!isTranslated(tempTask.title) || !isTranslated(tempTask.content)" class="fas fa-lock mr-2"></i>
+                        {{ (!isTranslated(tempTask.title) || !isTranslated(tempTask.content)) ? 'TRANSLATE ALL FIRST / 请翻译所有项' : 'SAVE / 保存配置' }}
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="currentView === 'task_exec'" class="min-h-full px-4 pt-4">
+                <div class="mb-4 bg-[#010409] p-4 rounded border border-[#30363d]">
+                    <h3 class="font-bold text-[#1f6feb] text-lg mb-2">{{tempExecution.title}}</h3>
+                    <div class="space-y-2 text-xs text-[#e6edf3]">
+                        <p><span class="text-[#8b949e] block mb-1">Task Content / 任务内容:</span>{{tempExecution.content}}</p>
+                        <div class="h-px bg-[#30363d]"></div>
+                        <p><span class="text-[#8b949e] block mb-1">Check Items / 检查项目:</span>{{tempExecution.items}}</p>
+                        <div class="h-px bg-[#30363d]"></div>
+                        <p><span class="text-[#8b949e] block mb-1">Standard / 执行标准:</span>{{tempExecution.standard}}</p>
+                    </div>
+                </div>
+                <div class="input-wrapper textarea mb-4">
+                    <textarea v-model="executionForm.note" class="ind-input h-32 p-3" :class="isTranslated(executionForm.note)?'translated':'untranslated'" placeholder="Log details / 填写日志..."></textarea>
+                    <button @click="verifyTranslate('executionForm')" class="trans-btn" :class="isTranslated(executionForm.note)?'done':'pending'">
+                        <i class="fas" :class="isTranslated(executionForm.note)?'fa-check':'fa-language'"></i> {{ isTranslated(executionForm.note)?'OK':'A/文' }}
+                    </button>
+                </div>
+                <div v-if="tempExecution.require_photo" class="mb-4">
+                      <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">* Evidence / 影像</label>
+                      <div class="grid grid-cols-3 gap-3">
+                        <div v-for="(photo, idx) in executionForm.photos" :key="idx" class="relative aspect-square bg-black rounded border border-[#30363d] overflow-hidden group">
+                            <img :src="photo" class="w-full h-full object-cover">
+                            <button @click="removePhoto('executionForm', idx)" class="absolute top-0 right-0 bg-[#30363d] text-[#e6edf3] w-6 h-6 flex items-center justify-center rounded-bl text-[10px] hover:bg-[#da3633] hover:text-white transition shadow-md z-10 border-l border-b border-[#0d1117]">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="border-2 border-dashed border-[#30363d] bg-[#010409] rounded flex flex-col items-center justify-center cursor-pointer relative aspect-square">
+                            <input type="file" accept="image/*" capture="environment" @change="handlePhotoUploadExec" class="absolute inset-0 opacity-0 z-10 w-full h-full cursor-pointer">
+                            <i class="fas fa-camera text-2xl text-[#8b949e]"></i>
+                            <p class="text-[9px] text-[#8b949e] mt-1 font-bold text-center leading-tight">LIVE CAM<br>现场拍照</p>
+                        </div>
+                      </div>
+                </div>
+                <button @click="submitExecution" :disabled="!isTranslated(executionForm.note)" class="btn btn-primary w-full py-3 text-sm">
+                    <i v-if="!isTranslated(executionForm.note)" class="fas fa-lock mr-2"></i>
+                    {{ !isTranslated(executionForm.note) ? 'MUST TRANSLATE FIRST / 请先翻译' : 'COMPLETE / 完成任务' }}
+                </button>
+            </div>
+
+            <div v-if="currentView === 'team'" class="min-h-full">
+                <div class="mb-4 flex justify-between items-end pb-2 border-b border-[#30363d]">
+                    <div>
+                        <h2 class="font-bold text-lg text-[#e6edf3]">Staff Management / 人员管理</h2>
+                        <p class="text-[10px] text-[#8b949e]">Admin Access Only / 仅限管理员</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="showStorageModal = true" class="text-[10px] border border-[#30363d] px-3 py-1.5 rounded bg-[#161b22] text-[#8b949e] hover:text-white">
+                            <i class="fas fa-database mr-1" :class="storagePercent > 90 ? 'text-[#da3633] animate-pulse' : ''"></i> Storage
+                        </button>
+                        <button @click="openUserModal('add')" class="text-[10px] border border-[#30363d] px-3 py-1.5 rounded bg-[#238636] text-white hover:bg-green-600 font-bold"><i class="fas fa-user-plus mr-1"></i> Add / 新增</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-4">
+                    <button @click="activeTeamTab = 'internal'" class="flex-1 py-2 text-xs font-bold rounded border transition-colors" :class="activeTeamTab==='internal'?'bg-[#1f6feb] text-white border-[#1f6feb]':'bg-[#161b22] text-[#8b949e] border-[#30363d]'">INTERNAL / 内部员工</button>
+                    <button @click="activeTeamTab = 'external'" class="flex-1 py-2 text-xs font-bold rounded border transition-colors" :class="activeTeamTab==='external'?'bg-[#d29922] text-white border-[#d29922]':'bg-[#161b22] text-[#8b949e] border-[#30363d]'">EXTERNAL / 外部账号</button>
+                </div>
+
+                <div class="space-y-3">
+                    <div v-for="user in (activeTeamTab==='internal' ? staffList.filter(u=>u.role!=='vendor') : staffList.filter(u=>u.role==='vendor'))" :key="user.id" class="ind-card p-4 flex justify-between items-center group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs" :class="user.role==='vendor'?'bg-[rgba(210,153,34,0.1)] text-[#d29922] border border-[#d29922]':'bg-[#161b22] border border-[#30363d] text-[#8b949e]'">{{ user.name[0] }}</div>
+                            <div>
+                                <p class="font-bold text-sm text-[#e6edf3]">{{ user.name }}</p>
+                                <p class="text-[10px] text-[#8b949e] font-mono"><span class="bg-[#30363d] px-1 rounded text-[#c9d1d9]">{{ user.login_id }}</span> • {{ user.role.toUpperCase() }}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                             <button @click="openUserModal('edit', user)" class="w-8 h-8 flex items-center justify-center rounded border border-[#30363d] bg-[#0d1117] text-[#1f6feb] hover:border-[#1f6feb]"><i class="fas fa-pen"></i></button>
+                             <button v-if="user.login_id !== currentUser.login_id" @click="deleteUser(user.id)" class="w-8 h-8 flex items-center justify-center rounded border border-[#30363d] bg-[#0d1117] text-[#da3633] hover:border-[#da3633]"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script>
+    /**
+     * =============================================================================
+     * KMC SiteOps Frontend Logic (Vue 3 + Supabase)
+     * =============================================================================
+     * * 主要功能模块:
+     * 1. 认证 (Authentication): 登录、注销、密码修改
+     * 2. 数据同步 (Sync): 与 Supabase 数据库实时同步
+     * 3. 任务执行 (Tasks): 巡逻、检查、拍照上传
+     * 4. 异常上报 (Incidents): 紧急 SOS、违规督察、多方电子签名
+     * 5. 自动翻译 (Translation): 跨语言沟通辅助 (中/英)
+     * 6. 离线/在线状态管理 (Network Status)
+     */
+    
+    const { createApp, ref, computed, nextTick, onMounted } = Vue;
+    const { createClient } = supabase;
+
+    // --- 数据库配置 (UPDATED: KMC Security) ---
+    // URL: 指向新的 Supabase 项目
+    const supabaseUrl = 'https://wwtkagzvdxgvcagwvvdz.supabase.co';
+    
+    // KEY: 新生成的 Anon Key
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dGthZ3p2ZHhndmNhZ3d2dmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNjUxMzIsImV4cCI6MjA4NTY0MTEzMn0.uVRP7UKAOMSRHRVpzjK5s2TCreY7_RaerVdYcS0ZrX8';
+    
+    // 初始化 Supabase 客户端
+    const _supabase = createClient(supabaseUrl, supabaseKey);
+
+    createApp({
+        setup() {
+            /**
+             * ---------------------------------------------------------------------
+             * 1. 核心状态管理 (Core State)
+             * ---------------------------------------------------------------------
+             */
+            const isLoading = ref(false);       // 全局 Loading 状态
+            const netStatus = ref('online');    // 网络状态: online, syncing, offline
+            const currentUser = ref(null);      // 当前登录用户对象
+            const loginForm = ref({ id: '', password: '' }); // 登录表单数据
+            
+            // 视图路由控制
+            const currentView = ref('tasks');   // 当前显示的视图组件
+            const activeTeamTab = ref('internal'); // 团队管理Tab
+            
+            // 存储管理
+            const showStorageModal = ref(false);
+            const storageUsageCount = ref(0);
+            const storageLimit = 500; // 记录条数限制
+            const hasBackedUp = ref(false); // 是否已执行备份
+
+            // 核心数据 (从 Supabase 获取)
+            const staffList = ref([]);     // 员工列表
+            const tasks = ref([]);         // 任务列表
+            const submissions = ref([]);   // 历史提交记录
+            
+            // 本地配置项 (可通过列表管理器修改)
+            const teamList = ref(['Alpha Squad / 阿尔法队', 'Beta Squad / 贝塔队']);
+            const vendorList = ref(['Security Co. A / 分包商A', 'Security Co. B / 分包商B']);
+            const emergencyTypes = ref(['Car Accident / 车祸', 'Flood / 洪水', 'Fire / 火灾']);
+            const customViolationTypes = ref(['Unsafe Operation / 违规操作']);
+
+            // 表单状态对象
+            const tempUser = ref({});
+            const showUserModal = ref(false);
+            const userModalMode = ref('add');
+            
+            const showPwdModal = ref(false);
+            const pwdForm = ref({ new: '', confirm: '' });
+
+            const tempTask = ref({});
+            const tempExecution = ref({});
+            
+            // 紧急表单数据结构
+            const emergencyForm = ref({ type:'', note:'', photos:[], translated:false });
+            // 违规表单数据结构
+            const violationForm = ref({ vendor:'', type:'Sleeping on Duty' });
+            // 执行/通用表单数据结构
+            const executionForm = ref({ note:'', photos:[], translated:false });
+            
+            // 报告筛选类型
+            const filterType = ref('all');
+
+            // 列表管理器状态
+            const showListManager = ref(false);
+            const listManagerType = ref(''); 
+            const newItemName = ref('');
+            
+            // 电子签名状态
+            const showSigModal = ref(false);
+            const sigType = ref(''); 
+            const hasSignedOfficer = ref(false);
+            const hasSignedVendor = ref(false);
+            const sigData = ref({ officer: null, vendor: null });
+            
+            /**
+             * ---------------------------------------------------------------------
+             * 2. 云端同步逻辑 (Fetch Data)
+             * ---------------------------------------------------------------------
+             * 从 Supabase 数据库拉取所有必要数据
+             */
+            const fetchData = async (force = false) => {
+                isLoading.value = true;
+                netStatus.value = 'syncing';
+                try {
+                    // 读取员工列表
+                    const { data: staff } = await _supabase.from('kmc_staff').select('*').order('name');
+                    if(staff) staffList.value = staff;
+                    
+                    // 读取任务列表
+                    const { data: t } = await _supabase.from('kmc_tasks').select('*').order('id', { ascending: false });
+                    if(t) tasks.value = t;
+
+                    // 读取提交记录 (最近100条)
+                    const { data: s } = await _supabase.from('kmc_submissions').select('*').order('id', { ascending: false }).limit(100);
+                    if(s) submissions.value = s;
+
+                    // 获取总记录数 (用于存储管理)
+                    const { count } = await _supabase.from('kmc_submissions').select('*', { count: 'exact', head: true });
+                    storageUsageCount.value = count || 0;
+
+                    netStatus.value = 'online';
+                } catch (err) {
+                    console.error("Sync Error:", err);
+                    netStatus.value = 'offline';
+                    alert("Network Error: Could not sync data. / 网络连接失败");
+                } finally {
+                    isLoading.value = false;
+                    if(force && netStatus.value === 'online') alert("Sync Complete / 同步完成");
+                }
+            };
+
+            // 初始化加载
+            onMounted(() => {
+                fetchData();
+            });
+
+            /**
+             * ---------------------------------------------------------------------
+             * 3. 计算属性 (Computed Logic)
+             * ---------------------------------------------------------------------
+             */
+            const isManagement = computed(() => currentUser.value && ['admin', 'manager'].includes(currentUser.value.role));
+            const isFormView = computed(() => currentView.value.includes('_form') || currentView.value.includes('_exec'));
+            const activeTasks = computed(() => tasks.value.filter(t => t.active));
+            const unreadAlerts = computed(() => submissions.value.filter(s => s.type === 'emergency' && (!s.review || !s.review.rating)));
+            const storagePercent = computed(() => Math.min(100, Math.round((storageUsageCount.value / storageLimit) * 100)));
+            
+            const currentEditingList = computed(() => { 
+                if(listManagerType.value==='teams') return teamList.value; 
+                if(listManagerType.value==='vendors') return vendorList.value; 
+                if(listManagerType.value==='emergencyTypes') return emergencyTypes.value;
+                if(listManagerType.value==='violationTypes') return customViolationTypes.value;
+                return []; 
+            });
+            const listManagerTitle = computed(() => {
+                if(listManagerType.value==='teams') return 'Internal Teams / 内部队伍';
+                if(listManagerType.value==='vendors') return 'External Vendors / 外部合作商';
+                if(listManagerType.value==='violationTypes') return 'Violation Types / 违规类型';
+                return 'Incident Types / 事故类型';
+            });
+            
+            const sigTitle = computed(() => sigType.value === 'officer' ? 'OFFICER SIGNATURE / 巡逻员签字' : 'VENDOR REP SIGNATURE / 当事人签字');
+            
+            // 过滤后的提交记录
+            const filteredSubmissions = computed(() => { 
+                let l = submissions.value; 
+                // 普通员工只能看自己的记录
+                if(!isManagement.value) l = l.filter(s=>s.staff_id===currentUser.value.login_id);
+                // 根据类型筛选
+                if(filterType.value!=='all') l = l.filter(s=>s.type===filterType.value);
+                return l; 
+            });
+
+            /**
+             * ---------------------------------------------------------------------
+             * 4. 辅助函数 (Utils)
+             * ---------------------------------------------------------------------
+             */
+            const formatTime = () => {
+                const now = new Date();
+                const pad = (n) => n.toString().padStart(2, '0');
+                return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            };
+
+            const handleLogin = () => { 
+                const u = staffList.value.find(x=>x.login_id===loginForm.value.id && x.password===loginForm.value.password); 
+                if(u){ currentUser.value=u; currentView.value='tasks'; fetchData(); } 
+                else alert('Wrong Password / 密码错误'); 
+            };
+            const handleLogout = () => { currentUser.value=null; loginForm.value.password=''; };
+            const goBack = () => { currentView.value='tasks'; executionForm.value={note:'', photos:[], translated:false}; };
+            
+            const isTranslated = (text) => {
+                return text && text.includes('(') && text.includes(')');
+            };
+
+            const verifyTranslate = (formName) => {
+                const target = formName === 'emergencyForm' ? emergencyForm.value : executionForm.value;
+                autoTranslate('note', target);
+            };
+            
+            /**
+             * ---------------------------------------------------------------------
+             * 5. 核心翻译引擎 (Auto-Translate)
+             * ---------------------------------------------------------------------
+             */
+            const autoTranslate = async (field, obj) => {
+                const text = obj[field];
+                if (!text) return;
+                
+                if (text.includes("(") && text.includes(")")) return; // 已翻译则跳过
+
+                const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+                const langPair = hasChinese ? 'zh-CN|en' : 'en|zh-CN';
+
+                // 离线字典匹配 (提升常见词汇速度)
+                const dictionary = {
+                    "Sleeping on Duty": "睡岗", "睡岗": "Sleeping on Duty",
+                    "Missing / AWOL": "擅离职守", "擅离职守": "Missing / AWOL",
+                    "Uniform Issue": "着装不整", "着装不整": "Uniform Issue",
+                    "Unsafe Operation": "违规操作", "违规操作": "Unsafe Operation",
+                    "Car Accident": "车祸", "车祸": "Car Accident",
+                    "Flood": "洪水", "洪水": "Flood",
+                    "Fire": "火灾", "火灾": "Fire",
+                    "Routine Task": "日常任务", "日常任务": "Routine Task"
+                };
+
+                if (dictionary[text]) {
+                    obj[field] = `${text} (${dictionary[text]})`;
+                    return;
+                }
+
+                // API 调用
+                const originalText = text;
+                obj[field] = "Translating... / 正在翻译..."; 
+
+                try {
+                    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=${langPair}`;
+                    
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    if (data && data.responseData && data.responseData.translatedText) {
+                        obj[field] = `${originalText} (${data.responseData.translatedText})`;
+                        if(obj === emergencyForm.value || obj === executionForm.value) obj.translated = true;
+                    } else {
+                        throw new Error("Translation empty");
+                    }
+                } catch (err) {
+                    console.error("Translation Error:", err);
+                    obj[field] = originalText; 
+                    alert("Network Translation Failed. Please check connection.\n网络翻译失败，请检查网络。");
+                }
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 6. 存储/导出功能 (Backup & Restore)
+             * ---------------------------------------------------------------------
+             */
+            const getStorageColor = (p) => p > 80 ? '#da3633' : (p > 50 ? '#d29922' : '#238636');
+            const getStorageColorClass = (p) => p > 80 ? 'text-[#da3633]' : (p > 50 ? 'text-[#d29922]' : 'text-[#238636]');
+            
+            const exportDatabase = async () => {
+                isLoading.value = true;
+                const { data, error } = await _supabase.from('kmc_submissions').select('*');
+                if(error) { alert("Export Failed"); isLoading.value=false; return; }
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `KMC_BACKUP_${formatTime().replace(/[: ]/g, '')}.json`;
+                link.click();
+                
+                hasBackedUp.value = true;
+                isLoading.value = false;
+            };
+
+            const clearDatabase = async () => {
+                if(!hasBackedUp.value) return;
+                if(!confirm("⚠️ DANGER: Are you sure you want to DELETE ALL HISTORY? This cannot be undone!\n⚠️ 警告：确定清空所有历史数据吗？操作不可恢复！")) return;
+                
+                isLoading.value = true;
+                const { error } = await _supabase.from('kmc_submissions').delete().neq('id', 0);
+                if(error) alert("Clear Failed: " + error.message);
+                else {
+                    alert("Database Cleared / 数据库已清空");
+                    showStorageModal.value = false;
+                    fetchData();
+                }
+                isLoading.value = false;
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 7. 用户 CRUD 逻辑 (User Management)
+             * ---------------------------------------------------------------------
+             */
+            const openUserModal = (mode, user) => {
+                userModalMode.value = mode;
+                showUserModal.value = true;
+                if(mode === 'add') {
+                    tempUser.value = { name: '', login_id: '', password: '0000', role: 'patrol', team: '' };
+                } else {
+                    tempUser.value = { ...user };
+                }
+            };
+            
+            const saveUserToCloud = async () => {
+                if(!isTranslated(tempUser.value.name)) return alert("Please translate name");
+                if(!tempUser.value.name || !tempUser.value.login_id || !tempUser.value.password) return alert("Missing Info");
+                isLoading.value = true;
+                netStatus.value = 'syncing';
+                
+                const payload = {
+                    name: tempUser.value.name,
+                    login_id: tempUser.value.login_id,
+                    password: tempUser.value.password,
+                    role: tempUser.value.role,
+                    team: tempUser.value.team
+                };
+
+                let error = null;
+                if(userModalMode.value === 'add') {
+                    const { error: e } = await _supabase.from('kmc_staff').insert([payload]);
+                    error = e;
+                } else {
+                    const { error: e } = await _supabase.from('kmc_staff').update(payload).eq('id', tempUser.value.id);
+                    error = e;
+                }
+
+                if(error) { alert("Error: " + error.message); netStatus.value='offline'; }
+                else { showUserModal.value = false; fetchData(); }
+                isLoading.value = false;
+            };
+            
+            const deleteUser = async (id) => {
+                if(confirm("Delete User?")) {
+                    isLoading.value = true;
+                    await _supabase.from('kmc_staff').delete().eq('id', id);
+                    fetchData();
+                    isLoading.value = false;
+                }
+            };
+
+            const changePassword = async () => {
+                if(!pwdForm.value.new || pwdForm.value.new.length < 4) return alert("Password too short");
+                if(pwdForm.value.new !== pwdForm.value.confirm) return alert("Mismatch");
+                
+                isLoading.value = true;
+                const { error } = await _supabase.from('kmc_staff').update({ password: pwdForm.value.new }).eq('id', currentUser.value.id);
+                if(error) alert("Error: " + error.message);
+                else {
+                    alert("Password Changed");
+                    currentUser.value.password = pwdForm.value.new;
+                    showPwdModal.value = false;
+                    pwdForm.value = { new:'', confirm:'' };
+                }
+                isLoading.value = false;
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 8. 任务 CRUD 逻辑 (Task Management)
+             * ---------------------------------------------------------------------
+             */
+            const goToTaskForm = (t) => { tempTask.value=t?{...t}:{title:'',content:'',items:'',standard:'',require_photo:true, active:true}; currentView.value='task_form'; };
+            
+            const saveTaskToCloud = async (taskObj = null, quickToggle = false) => {
+                const target = quickToggle ? taskObj : tempTask.value;
+                
+                if(!quickToggle) {
+                    if(!isTranslated(target.title) || !isTranslated(target.content) || !isTranslated(target.items) || !isTranslated(target.standard)) {
+                        return alert("Please translate all fields before saving! / 请先翻译所有字段！");
+                    }
+                    isLoading.value = true;
+                    netStatus.value = 'syncing';
+                }
+
+                const payload = {
+                    title: target.title, content: target.content, items: target.items,
+                    standard: target.standard, require_photo: target.require_photo, active: target.active
+                };
+
+                let error = null;
+                if(target.id) {
+                    const { error: e } = await _supabase.from('kmc_tasks').update(payload).eq('id', target.id);
+                    error = e;
+                } else {
+                    const { error: e } = await _supabase.from('kmc_tasks').insert([payload]);
+                    error = e;
+                }
+
+                if(!quickToggle) {
+                    isLoading.value = false;
+                    if(error) { alert("Error"); netStatus.value='offline'; } else { goBack(); fetchData(); }
+                }
+            };
+            
+            const deleteTaskFromCloud = async (id) => {
+                if(confirm("Delete Task?")) {
+                    isLoading.value = true;
+                    await _supabase.from('kmc_tasks').delete().eq('id', id);
+                    fetchData();
+                    isLoading.value = false;
+                }
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 9. 提交/表单逻辑 (Submission Logic)
+             * ---------------------------------------------------------------------
+             */
+            const goToEmergencyForm = () => { emergencyForm.value={type:'',note:'',photos:[],translated:false}; currentView.value='emergency_form'; };
+            
+            const submitEmergency = async () => {
+                if(!isTranslated(emergencyForm.value.note)) return alert("Please click translate button first!");
+                if(!emergencyForm.value.type || !emergencyForm.value.note) return alert("Fill all fields");
+                if(!confirm("CONFIRM SEND SOS?")) return;
+                
+                isLoading.value = true;
+                netStatus.value = 'syncing';
+                const payload = {
+                    type: 'emergency',
+                    title: `SOS: ${emergencyForm.value.type}`,
+                    note: emergencyForm.value.note,
+                    staff_name: currentUser.value.name,
+                    staff_id: currentUser.value.login_id,
+                    photos: emergencyForm.value.photos, 
+                    time: formatTime()
+                };
+
+                const { error } = await _supabase.from('kmc_submissions').insert([payload]);
+                if(error) { alert("Failed: " + error.message); netStatus.value='offline'; }
+                else { alert("SENT / 已发送"); currentView.value='reports'; fetchData(); }
+                isLoading.value = false;
+            };
+
+            const goToViolationForm = () => { violationForm.value={vendor:'',type:'Sleeping on Duty'}; executionForm.value={note:'',translated:false}; hasSignedOfficer.value=false; hasSignedVendor.value=false; sigData.value={officer:null,vendor:null}; currentView.value='violation_form'; };
+            
+            const submitViolation = async () => {
+                if(!isTranslated(executionForm.value.note)) return alert("Please click translate button first!");
+                isLoading.value = true;
+                netStatus.value = 'syncing';
+                const payload = {
+                    type: 'violation',
+                    title: `VIOLATION: ${violationForm.value.vendor} - ${violationForm.value.type}`,
+                    note: executionForm.value.note,
+                    staff_name: currentUser.value.name,
+                    staff_id: currentUser.value.login_id,
+                    time: formatTime(),
+                    sigs: sigData.value,
+                    photos: []
+                };
+                const { error } = await _supabase.from('kmc_submissions').insert([payload]);
+                if(error) { alert("Failed: " + error.message); netStatus.value='offline'; }
+                else { alert("CONFIRMED / 违规已记录"); currentView.value='reports'; fetchData(); }
+                isLoading.value = false;
+            };
+
+            const goToTaskExec = (t) => { tempExecution.value=t; executionForm.value={note:'',photos:[],translated:false}; currentView.value='task_exec'; };
+            
+            const submitExecution = async () => { 
+                if(!isTranslated(executionForm.value.note)) return alert("Please click translate button first!");
+                isLoading.value = true;
+                netStatus.value = 'syncing';
+                const payload = {
+                    type: 'duty',
+                    title: 'Routine Task',
+                    task_snapshot: tempExecution.value,
+                    note: executionForm.value.note,
+                    staff_name: currentUser.value.name,
+                    staff_id: currentUser.value.login_id,
+                    time: formatTime(),
+                    photos: executionForm.value.photos
+                };
+                const { error } = await _supabase.from('kmc_submissions').insert([payload]);
+                if(error) { alert("Failed"); netStatus.value='offline'; }
+                else { alert("DONE / 完成"); goBack(); fetchData(); }
+                isLoading.value = false;
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 10. 评分与反馈 (Reviews)
+             * ---------------------------------------------------------------------
+             */
+            const setTempRating = (sub, rating) => {
+                sub.tempRating = rating; 
+                if(rating === 'pass') sub.tempComment = 'Standard met. / 符合标准。';
+                else if(rating === 'improve') sub.tempComment = 'Please pay attention to... / 请注意...';
+                else sub.tempComment = 'Unacceptable because... / 不合格，因为...';
+            };
+            
+            const submitReview = async (sub) => {
+                if(!sub.tempComment) return alert("Comment required");
+                isLoading.value = true;
+                netStatus.value = 'syncing';
+                const reviewData = { rating: sub.tempRating, comment: sub.tempComment, reviewer: currentUser.value.name, time: formatTime() };
+                
+                const { error } = await _supabase.from('kmc_submissions').update({ review: reviewData }).eq('id', sub.id);
+                if(error) { alert("Failed"); netStatus.value='offline'; }
+                else { alert("REVIEW SAVED"); fetchData(); }
+                isLoading.value = false;
+            };
+            
+            const getRatingColor = (r) => {
+                if(r === 'pass') return 'text-[#238636] border-[#238636]';
+                if(r === 'improve') return 'text-[#d29922] border-[#d29922]';
+                return 'text-[#da3633] border-[#da3633]';
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 11. 工具函数：图片压缩与水印 (Image Processing)
+             * ---------------------------------------------------------------------
+             */
+            const openListManager = (t) => { listManagerType.value=t; showListManager.value=true; newItemName.value=''; };
+            const addListItem = () => { if(newItemName.value){ currentEditingList.value.push(newItemName.value); newItemName.value=''; }}; 
+            const removeListItem = (i) => { if(confirm("Confirm Delete?")) { currentEditingList.value.splice(i,1); }};
+
+            const compressAndWatermark = (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const maxWidth = 800; 
+                            let width = img.width; let height = img.height;
+                            if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+                            canvas.width = width; canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            // 水印逻辑
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                            ctx.fillRect(0, height - 50, width, 50);
+                            const timeStr = "KMC SECURE: " + formatTime();
+                            ctx.font = 'bold 20px monospace'; 
+                            ctx.fillStyle = '#f0b429';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(timeStr, 15, height - 25);
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+            
+            const handlePhotoUpload = async (e) => { const f=e.target.files[0]; if(f){ const d=await compressAndWatermark(f); emergencyForm.value.photos.push(d); } };
+            const handlePhotoUploadExec = async (e) => { const f=e.target.files[0]; if(f){ const d=await compressAndWatermark(f); executionForm.value.photos.push(d); } };
+            const removePhoto = (formName, idx) => {
+                const target = formName === 'emergencyForm' ? emergencyForm.value : executionForm.value;
+                if(confirm("Delete Photo?")) target.photos.splice(idx, 1);
+            };
+
+            /**
+             * ---------------------------------------------------------------------
+             * 12. 电子签名 Canvas 逻辑 (Signature Pad)
+             * ---------------------------------------------------------------------
+             */
+            let canvas, ctx, resizeHandler; 
+            const openSigModal = (t) => { sigType.value=t; showSigModal.value=true; nextTick(initCanvas); };
+            const closeSigModal = () => { showSigModal.value=false; if(resizeHandler) { window.removeEventListener('resize', resizeHandler); resizeHandler = null; } };
+
+            const initCanvas = () => {
+                canvas = document.getElementById('signature-pad'); if(!canvas)return;
+                const setCanvasSize = (restoreContent = false) => {
+                    let savedData;
+                    if (restoreContent) savedData = canvas.toDataURL();
+                    const r = canvas.parentElement.getBoundingClientRect(); 
+                    canvas.width = r.width; canvas.height = r.height;
+                    ctx = canvas.getContext('2d'); 
+                    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    ctx.lineWidth=3; ctx.lineCap='round'; ctx.strokeStyle='#000';
+                    if (restoreContent && savedData) {
+                        const img = new Image();
+                        img.onload = () => ctx.drawImage(img, 0, 0);
+                        img.src = savedData;
+                    }
+                };
+                setCanvasSize(false);
+                let drawing=false;
+                // 坐标计算 (修复移动端偏移)
+                const getPos=(e)=>{const r=canvas.getBoundingClientRect();return{x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,y:(e.touches?e.touches[0].clientY:e.clientY)-r.top}};
+                const start=(e)=>{e.preventDefault();drawing=true;ctx.beginPath();const p=getPos(e);ctx.moveTo(p.x,p.y);};
+                const move=(e)=>{if(!drawing)return;e.preventDefault();const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();};
+                const end=()=>{drawing=false;};
+                canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);
+                canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',end);
+                if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+                resizeHandler = () => setCanvasSize(true); 
+                window.addEventListener('resize', resizeHandler);
+            };
+            
+            const clearSignature = () => { ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); };
+            
+            const saveSignature = () => { 
+                const d = canvas.toDataURL();
+                if(sigType.value==='officer') { sigData.value.officer=d; hasSignedOfficer.value=true; } 
+                else { sigData.value.vendor=d; hasSignedVendor.value=true; }
+                closeSigModal(); 
+            };
+
+            const generatePDF = () => {
+                const element = document.getElementById('report-list-container');
+                if(!element) return;
+                element.classList.add('pdf-export-mode');
+                const opt = {
+                    margin:       [10, 10, 10, 10],
+                    filename:     `KMC_Report_${formatTime().replace(/[: ]/g, '')}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(element).save()
+                    .then(() => { element.classList.remove('pdf-export-mode'); })
+                    .catch((e) => { console.error(e); element.classList.remove('pdf-export-mode'); alert("Export Failed"); });
+            };
+
+            return {
+                // State & Computed
+                isLoading, netStatus, currentUser, loginForm, currentView, staffList, teamList, vendorList, emergencyTypes, customViolationTypes, tasks, submissions, unreadAlerts, isManagement, activeTasks, activeTeamTab, showListManager, listManagerType, currentEditingList, listManagerTitle, newItemName, emergencyForm, tempUser, tempTask, violationForm, executionForm, filterType, filteredSubmissions, showSigModal, sigTitle, hasSignedOfficer, hasSignedVendor, tempExecution, showUserModal, userModalMode, showPwdModal, pwdForm,
+                // Storage & Export
+                showStorageModal, storageUsageCount, storageLimit, storagePercent, hasBackedUp, getStorageColor, getStorageColorClass, exportDatabase, clearDatabase,
+                // Actions
+                handleLogin, handleLogout, goBack, verifyTranslate, autoTranslate, goToEmergencyForm, submitEmergency, openListManager, addListItem, removeListItem, handlePhotoUpload, handlePhotoUploadExec, goToTaskForm, saveTaskToCloud, deleteTaskFromCloud, goToViolationForm, submitViolation, openSigModal, closeSigModal, clearSignature, saveSignature, goToTaskExec, submitExecution, removePhoto, setTempRating, submitReview, getRatingColor, openUserModal, saveUserToCloud, deleteUser, changePassword, generatePDF, fetchData,
+                isTranslated 
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
