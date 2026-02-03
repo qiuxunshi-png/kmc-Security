@@ -20,46 +20,34 @@
     <style>
         /* =========================================
         KMC 工业级深色主题 (KMC Industrial Dark Theme)
-        保留原版完整 CSS
         ========================================= 
         */
 
         :root {
-            /* 核心背景色 */
             --bg: #0d1117; 
             --panel: #161b22; 
-            
-            /* 边框与分割线 */
             --border: #30363d; 
-            
-            /* 文本颜色 */
             --text: #e6edf3; 
             --text-muted: #8b949e; 
+            --primary: #1f6feb;   
+            --success: #238636;   
+            --danger: #da3633;    
+            --warning: #d29922;   
+            --kmc-gold: #f0b429;
+            --inspect: #a371f7; /* 新增督查紫色 */
             
-            /* 功能色板 */
-            --primary: #1f6feb;   /* 蓝色：常规操作 */
-            --success: #238636;   /* 绿色：成功/安全 */
-            --danger: #da3633;    /* 红色：危险/紧急 */
-            --warning: #d29922;   /* 黄色：警告/注意 */
-            --kmc-gold: #f0b429;  /* 金色：品牌色/高亮 */
-            
-            /* V11 新增优先级颜色 */
             --p-high: #ff4d4d;
             --p-medium: #d29922;
             --p-low: #1f6feb;
         }
 
-        /* -----------------------------------------
-        基础全局重置 (Base Reset)
-        -----------------------------------------
-        */
         body { 
             background-color: var(--bg); 
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
-            user-select: none; /* 禁止选中文本，类似原生App体验 */
+            user-select: none; 
             color: var(--text); 
             -webkit-tap-highlight-color: transparent; 
-            overscroll-behavior: none; /* 防止下拉刷新导致页面抖动 */
+            overscroll-behavior: none; 
             margin: 0;
             padding: 0;
         }
@@ -84,7 +72,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
             margin-bottom: 12px; 
             transition: transform 0.2s, box-shadow 0.2s;
-            position: relative; /* 为了定位优先级标签 */
+            position: relative; 
             overflow: hidden;
         }
         
@@ -114,7 +102,6 @@
             font-style: italic; 
         }
 
-        /* 强制翻译视觉反馈 */
         @keyframes pulse-red { 
             0% { box-shadow: 0 0 0 0 rgba(218, 54, 51, 0.7); } 
             70% { box-shadow: 0 0 0 6px rgba(218, 54, 51, 0); } 
@@ -175,18 +162,15 @@
             top: 10px; 
         }
         
-        /* 针对 textarea input-wrapper 的特殊调整，确保内容不被按钮遮挡 */
         .input-wrapper.textarea .ind-input {
-             padding-right: 12px; /* textarea 不需要右侧 padding，因为按钮在右上角 */
+             padding-right: 12px; 
         }
-        /* 确保 textarea 中的翻译按钮定位在右上角 */
+        
         .input-wrapper.textarea .trans-btn {
-            top: 10px; /* 调整高度以避开 label */
+            top: 10px; 
             right: 8px;
         }
 
-
-        /* 按钮系统 */
         .btn { 
             font-weight: 700; 
             border-radius: 6px; 
@@ -214,37 +198,13 @@
             border: 1px solid #30363d !important; 
         }
         
-        .btn-primary { 
-            background: var(--primary); 
-            color: white; 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        
-        .btn-success { 
-            background: var(--success); 
-            color: white; 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        
-        .btn-danger { 
-            background: var(--danger); 
-            color: white; 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        
-        .btn-warning { 
-            background: var(--warning); 
-            color: black; 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        
-        .btn-ghost { 
-            background: var(--panel); 
-            border: 1px solid var(--border); 
-            color: var(--text); 
-        }
+        .btn-primary { background: var(--primary); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-success { background: var(--success); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-danger { background: var(--danger); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-warning { background: var(--warning); color: black; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-inspect { background: var(--inspect); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-ghost { background: var(--panel); border: 1px solid var(--border); color: var(--text); }
 
-        /* 模态弹窗 */
         .modal-overlay { 
             position: fixed; 
             inset: 0; 
@@ -274,7 +234,6 @@
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* 导航栏 */
         .nav-bar { 
             display: flex; 
             background: #0d1117; 
@@ -308,7 +267,6 @@
             margin-bottom: 2px; 
         }
         
-        /* 紧急警报条 */
         .alert-bar { 
             background: var(--danger); 
             color: white; 
@@ -326,7 +284,6 @@
             50% { background: #b91c1c; } 
         }
 
-        /* Loading */
         .loading-overlay { 
             position: fixed; 
             inset: 0; 
@@ -354,7 +311,6 @@
             100% { transform: rotate(360deg); } 
         }
 
-        /* 存储指示条 */
         .storage-bar-bg { 
             width: 100%; 
             height: 8px; 
@@ -369,7 +325,6 @@
             transition: width 0.5s ease; 
         }
 
-        /* 打印与 PDF */
         @media print {
             .app-container { border: none; width: 100%; max-width: none; }
             .btn, .trans-btn, .no-print, header, .nav-bar, .alert-bar, .modal-overlay, .loading-overlay { display: none !important; } 
@@ -417,9 +372,6 @@
             display: none !important; 
         }
 
-        /* =========================================
-           V11.0 新增样式 (优先级与通知)
-           ========================================= */
         .priority-badge { 
             font-size: 9px; 
             padding: 2px 6px; 
@@ -458,25 +410,6 @@
         <p class="text-[#f0b429] font-bold text-sm uppercase tracking-widest">KMC SECURITY CLOUD</p>
         <p class="text-[#8b949e] text-xs mt-2">Syncing with KMC Database...</p>
         <p class="text-[10px] text-[#30363d] font-mono mt-4">Node: Supabase</p>
-    </div>
-
-    <div v-if="showHandoverModal" class="modal-overlay z-[1500]">
-        <div class="modal-content border-l-4 border-l-[#d29922]">
-            <div class="text-center mb-6">
-                <i class="fas fa-clipboard-list text-4xl text-[#d29922] mb-3"></i>
-                <h3 class="font-bold text-xl text-[#e6edf3]">SHIFT HANDOVER / 交接事项</h3>
-                <p class="text-xs text-[#8b949e]">Previous Shift Issues / 上一班遗留问题</p>
-            </div>
-            <div class="bg-[#010409] p-4 rounded border border-[#30363d] mb-6 max-h-48 overflow-y-auto">
-                <div v-for="h in activeHandovers" :key="h.id" class="mb-3 border-b border-[#30363d] pb-2 last:border-0">
-                    <p class="text-xs text-[#f0b429] font-bold mb-1">{{ h.author_name }} <span class="text-[#8b949e] font-mono">({{ h.created_at.substring(11,16) }})</span></p>
-                    <p class="text-sm text-[#e6edf3]">{{ h.content }}</p>
-                </div>
-            </div>
-            <button @click="acknowledgeHandover" class="btn btn-primary w-full py-4 shadow-lg animate-pulse">
-                <i class="fas fa-check-double mr-2"></i> I ACKNOWLEDGE / 确认知晓
-            </button>
-        </div>
     </div>
 
     <div v-if="showNotifModal" class="modal-overlay" @click.self="showNotifModal=false">
@@ -604,7 +537,6 @@
                     <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Role / 角色</label>
                     <select v-model="tempUser.role" class="ind-input appearance-none">
                         <option value="patrol">Internal Patrol / 内部安保</option>
-                        <option value="vendor">External Vendor / 分包商</option>
                         <option value="manager">Manager / 经理 (Admin)</option>
                         <option value="admin">Director / 总监</option>
                     </select>
@@ -671,12 +603,7 @@
                                 {{ user.name }}
                             </option>
                         </optgroup>
-                        <optgroup label="External Vendor / 外部安保">
-                            <option v-for="user in staffList.filter(u => u.role === 'vendor')" :key="user.id" :value="user.login_id">
-                                {{ user.name }}
-                            </option>
-                        </optgroup>
-                    </select>
+                        </select>
                     <i class="fas fa-chevron-down absolute right-4 top-4 text-[#8b949e] pointer-events-none"></i>
                 </div>
             </div>
@@ -729,7 +656,7 @@
         <div v-if="!isFormView" class="bg-[#0d1117] border-b border-[#30363d] flex sticky top-[73px] z-30 no-print nav-bar">
             <button @click="currentView = 'tasks'" class="nav-item" :class="{active: currentView==='tasks'}" style="border-bottom-color: #1f6feb"><i class="fas fa-route text-[#1f6feb]"></i>Patrol/巡逻</button>
             <button @click="goToEmergencyForm" class="nav-item" :class="{active: currentView==='emergency_form'}" style="border-bottom-color: #da3633"><i class="fas fa-bolt text-[#da3633]"></i>SOS/急报</button>
-            <button @click="currentView = 'handover'" class="nav-item" :class="{active: currentView==='handover'}" style="border-bottom-color: #f0b429"><i class="fas fa-exchange-alt text-[#f0b429]"></i>Shift/交接</button>
+            <button @click="goToSupervision" class="nav-item" :class="{active: currentView==='supervision'}" style="border-bottom-color: #a371f7"><i class="fas fa-search text-[#a371f7]"></i>Inspect/督查</button>
             <button @click="currentView = 'reports'" class="nav-item" :class="{active: currentView==='reports'}"><i class="fas fa-file-alt"></i>Log/记录</button>
             <button v-if="isManagement" @click="currentView = 'team'" class="nav-item" :class="{active: currentView==='team'}"><i class="fas fa-sitemap"></i>Team/管理</button>
         </div>
@@ -781,26 +708,73 @@
                 </div>
             </div>
 
-            <div v-if="currentView === 'handover'">
-                <div class="ind-card p-6 text-center border-[#f0b429]">
-                    <i class="fas fa-history text-4xl text-[#f0b429] mb-4"></i>
-                    <h2 class="text-xl font-bold text-[#e6edf3]">End Shift / 下班交接</h2>
-                    <p class="text-xs text-[#8b949e] mb-6">Record pending issues for next shift.<br>记录遗留问题给下一班。</p>
-                    
-                    <div class="input-wrapper textarea mb-4 text-left">
-                        <label class="text-[10px] text-[#8b949e] uppercase font-bold mb-1">Handover Note / 交接内容</label>
-                        <textarea v-model="handoverNote" class="ind-input h-32" :class="isTranslated(handoverNote)?'translated':'untranslated'" placeholder="e.g. Back door lock broken... / 例如：后门锁损坏..."></textarea>
-                        <button @click="autoTranslate('handoverNote', this)" class="trans-btn top-8" :class="isTranslated(handoverNote)?'done':'pending'">
-                            <i class="fas" :class="isTranslated(handoverNote)?'fa-check':'fa-language'"></i>
+            <div v-if="currentView === 'supervision'" class="min-h-full">
+                <div class="p-4 border-b border-[#30363d] mb-4 bg-[rgba(163,113,247,0.1)] sticky top-0 z-10 border-l-4 border-l-[#a371f7]">
+                    <h2 class="text-lg font-bold text-[#a371f7] mb-1"><i class="fas fa-search mr-2"></i>VENDOR INSPECTION</h2>
+                    <p class="text-[10px] text-[#a371f7]">Internal Supervision Record / 分包商督查记录单</p>
+                </div>
+                <div class="px-2 space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">* Target Vendor / 督查对象</label>
+                        <div class="flex gap-2">
+                            <div class="input-wrapper flex-1">
+                                <select v-model="supervisionForm.vendor" class="ind-input p-3 font-bold text-[#a371f7] appearance-none">
+                                    <option value="" disabled>Select Vendor / 选择单位...</option>
+                                    <option v-for="v in vendorList" :key="v" :value="v">{{ v }}</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-4 top-4 text-[#8b949e] pointer-events-none"></i>
+                            </div>
+                            <button @click="openListManager('vendors')" class="btn btn-ghost border border-[#30363d] px-4"><i class="fas fa-cog"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper textarea">
+                        <label class="block text-[10px] font-bold text-[#a371f7] uppercase mb-1">* Inspection Details / 检查详情 (翻译)</label>
+                        <textarea v-model="supervisionForm.note" class="ind-input h-32 p-3" :class="isTranslated(supervisionForm.note)?'translated':'untranslated'" placeholder="Describe issues or findings... / 描述违规项或检查结果..."></textarea>
+                        <button @click="verifyTranslate('supervisionForm')" class="trans-btn" :class="isTranslated(supervisionForm.note)?'done':'pending'">
+                            <i class="fas" :class="isTranslated(supervisionForm.note)?'fa-check':'fa-language'"></i> {{ isTranslated(supervisionForm.note)?'OK':'A/文' }}
                         </button>
                     </div>
-                    
-                    <button @click="submitHandover" class="btn btn-warning w-full py-3 font-bold text-black" :disabled="!isTranslated(handoverNote)">
-                        <i class="fas fa-paper-plane mr-2"></i> Submit & Logout / 提交并下班
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">* On-Site Photos / 现场取证</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div v-for="(photo, idx) in supervisionForm.photos" :key="idx" class="relative aspect-square bg-black rounded border border-[#a371f7] overflow-hidden group">
+                                <img :src="photo" class="w-full h-full object-cover">
+                                <button @click="removePhoto('supervisionForm', idx)" class="absolute top-0 right-0 bg-[#da3633] text-white w-6 h-6 flex items-center justify-center rounded-bl text-[10px] hover:bg-red-600 transition shadow-md z-10">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="border-2 border-dashed border-[#a371f7] bg-[#010409] rounded flex flex-col items-center justify-center cursor-pointer relative aspect-square hover:bg-[rgba(163,113,247,0.1)] transition">
+                                <input type="file" accept="image/*" capture="environment" @change="handlePhotoUploadSupervision" class="absolute inset-0 opacity-0 z-10 w-full h-full cursor-pointer">
+                                <i class="fas fa-camera text-2xl text-[#a371f7]"></i>
+                                <p class="text-[9px] text-[#a371f7] mt-1 font-bold text-center leading-tight">ADD PHOTO<br>添加照片</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-[#a371f7] uppercase mb-2">* Dual Signatures / 双方签字确认</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div @click="openSigModal('officer')" class="ind-input p-4 text-center cursor-pointer hover:bg-[#161b22] border border-dashed border-[#1f6feb] flex flex-col items-center justify-center min-h-[100px] transition">
+                                <i class="fas fa-user-shield text-[#1f6feb] text-2xl mb-2"></i>
+                                <p class="text-[10px] text-[#1f6feb] font-bold mb-1">INSPECTOR (ME)</p>
+                                <div v-if="hasSignedOfficer" class="mt-2 text-[#238636] font-bold text-xs bg-[rgba(35,134,54,0.1)] px-2 py-1 rounded"><i class="fas fa-check"></i> SIGNED</div>
+                            </div>
+                            <div @click="openSigModal('vendor')" class="ind-input p-4 text-center cursor-pointer hover:bg-[#161b22] border border-dashed border-[#da3633] flex flex-col items-center justify-center min-h-[100px] transition">
+                                <i class="fas fa-user-tag text-[#da3633] text-2xl mb-2"></i>
+                                <p class="text-[10px] text-[#da3633] font-bold mb-1">VENDOR REP</p>
+                                <div v-if="hasSignedVendor" class="mt-2 text-[#238636] font-bold text-xs bg-[rgba(35,134,54,0.1)] px-2 py-1 rounded"><i class="fas fa-check"></i> SIGNED</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button @click="submitSupervision" :disabled="!isTranslated(supervisionForm.note) || !hasSignedOfficer || !hasSignedVendor || !supervisionForm.vendor" class="btn btn-inspect w-full py-4 mt-4 shadow-lg text-sm font-bold text-white tracking-wide">
+                        <i v-if="!isTranslated(supervisionForm.note)" class="fas fa-lock mr-2"></i>
+                        {{ !isTranslated(supervisionForm.note) ? 'MUST TRANSLATE FIRST / 请先翻译' : 'SUBMIT RECORD / 提交督查记录' }}
                     </button>
                 </div>
             </div>
-
             <div v-if="currentView === 'task_form'" class="min-h-full px-4 pt-4">
                 <div class="mb-4"><h2 class="font-bold text-lg text-[#c9d1d9]">Task Config / 勤务配置</h2></div>
                 <div class="space-y-4">
@@ -866,6 +840,7 @@
                     </button>
                 </div>
             </div>
+
             <div v-if="currentView === 'emergency_form'" class="min-h-full">
                 <div class="p-4 border-b border-[#30363d] mb-4 bg-[rgba(218,54,51,0.1)] sticky top-0 z-10 border-l-4 border-l-[#da3633]">
                     <h2 class="text-lg font-bold text-[#da3633] mb-1"><i class="fas fa-radiation-alt mr-2"></i>SPECIAL SITUATION</h2>
@@ -1001,17 +976,29 @@
                     <div v-for="sub in filteredSubmissions" :key="sub.id" class="ind-card overflow-hidden break-inside-avoid print:border-black print:text-black print:bg-white" 
                          :class="getStatusBorderColor(sub)">
                         <div class="px-4 py-3 border-b border-[#30363d] flex justify-between items-center bg-[#161b22]">
-                            <div class="flex items-center gap-2"><span class="font-bold text-sm text-[#c9d1d9] print:text-black">{{ sub.staff_name }}</span><span v-if="sub.type === 'emergency'" class="bg-[#ff4d4d] text-white text-[9px] px-1.5 rounded font-bold uppercase">SOS</span><span v-else-if="sub.type === 'violation'" class="bg-[#d29922] text-black text-[9px] px-1.5 rounded font-bold uppercase">VIOLATION</span><span v-else class="bg-[#238636] text-white text-[9px] px-1.5 rounded font-bold uppercase">PATROL</span></div><span class="text-[10px] font-mono text-[#8b949e] print:text-black">{{ sub.time.substring(5,16) }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm text-[#c9d1d9] print:text-black">{{ sub.staff_name }}</span>
+                                <span v-if="sub.type === 'emergency'" class="bg-[#ff4d4d] text-white text-[9px] px-1.5 rounded font-bold uppercase">SOS</span>
+                                <span v-else-if="sub.type === 'violation'" class="bg-[#d29922] text-black text-[9px] px-1.5 rounded font-bold uppercase">VIOLATION</span>
+                                <span v-else-if="sub.type === 'supervision'" class="bg-[#a371f7] text-white text-[9px] px-1.5 rounded font-bold uppercase">INSPECTION</span>
+                                <span v-else class="bg-[#238636] text-white text-[9px] px-1.5 rounded font-bold uppercase">PATROL</span>
+                            </div>
+                            <span class="text-[10px] font-mono text-[#8b949e] print:text-black">{{ sub.time.substring(5,16) }}</span>
                         </div>
                         <div class="p-5">
                             <h4 class="font-bold text-base mb-3 print:text-black">{{ sub.title }}</h4>
                             <div v-if="sub.title === 'Routine Task' && sub.task_snapshot" class="mb-3 text-xs bg-[#010409] p-2 border border-[#30363d] rounded">
                                 <p><span class="text-[#8b949e]">Content:</span> {{ sub.task_snapshot.content }}</p>
                             </div>
-                            <div class="text-xs text-[#8b949e] bg-[#010409] p-3 rounded border border-[#30363d] font-mono print:bg-white print:border-black print:text-black"><span class="font-bold print:text-black" :class="sub.type==='emergency'?'text-[#da3633]':'text-[#d29922]'">NOTE:</span> {{ sub.note }}</div>
+                            <div class="text-xs text-[#8b949e] bg-[#010409] p-3 rounded border border-[#30363d] font-mono print:bg-white print:border-black print:text-black"><span class="font-bold print:text-black" :class="sub.type==='emergency'?'text-[#da3633]':(sub.type==='supervision'?'text-[#a371f7]':'text-[#d29922]')">NOTE:</span> {{ sub.note }}</div>
                             
                             <div v-if="sub.photos && sub.photos.length > 0" class="flex gap-2 mt-3 overflow-x-auto">
                                 <img v-for="(p, i) in sub.photos" :key="i" :src="p" class="h-16 w-16 object-cover rounded border border-[#30363d]">
+                            </div>
+
+                            <div v-if="sub.sigs" class="flex justify-between mt-3 pt-3 border-t border-[#30363d]">
+                                <div class="text-[10px] text-[#238636] font-bold"><i class="fas fa-file-signature mr-1"></i> Officer Signed</div>
+                                <div class="text-[10px] text-[#238636] font-bold"><i class="fas fa-file-contract mr-1"></i> Vendor Signed</div>
                             </div>
 
                             <div class="mt-4 pt-3 border-t border-[#30363d]">
@@ -1078,8 +1065,8 @@
             <div v-if="currentView === 'team'" class="min-h-full">
                 <div class="mb-4 flex justify-between items-end pb-2 border-b border-[#30363d]">
                     <div>
-                        <h2 class="font-bold text-lg text-[#e6edf3]">Staff Management / 人员管理</h2>
-                        <p class="text-[10px] text-[#8b949e]">Admin Access Only / 仅限管理员</p>
+                        <h2 class="font-bold text-lg text-[#e6edf3]">Staff Directory / 内部人员</h2>
+                        <p class="text-[10px] text-[#8b949e]">Internal Access Only / 仅限内部员工</p>
                     </div>
                     <div class="flex gap-2">
                         <button @click="showStorageModal = true" class="text-[10px] border border-[#30363d] px-3 py-1.5 rounded bg-[#161b22] text-[#8b949e] hover:text-white">
@@ -1089,15 +1076,16 @@
                     </div>
                 </div>
 
-                <div class="flex gap-2 mb-4">
-                    <button @click="activeTeamTab = 'internal'" class="flex-1 py-2 text-xs font-bold rounded border transition-colors" :class="activeTeamTab==='internal'?'bg-[#1f6feb] text-white border-[#1f6feb]':'bg-[#161b22] text-[#8b949e] border-[#30363d]'">INTERNAL / 内部员工</button>
-                    <button @click="activeTeamTab = 'external'" class="flex-1 py-2 text-xs font-bold rounded border transition-colors" :class="activeTeamTab==='external'?'bg-[#d29922] text-white border-[#d29922]':'bg-[#161b22] text-[#8b949e] border-[#30363d]'">EXTERNAL / 外部账号</button>
+                <div class="mb-4">
+                    <button @click="openListManager('vendors')" class="w-full py-3 text-xs font-bold rounded border bg-[#d29922] text-white border-[#d29922] hover:bg-[#b5831e] transition-colors shadow-lg">
+                        <i class="fas fa-building mr-2"></i> Manage Vendor List / 管理分包商名录
+                    </button>
                 </div>
 
                 <div class="space-y-3">
-                    <div v-for="user in (activeTeamTab==='internal' ? staffList.filter(u=>u.role!=='vendor') : staffList.filter(u=>u.role==='vendor'))" :key="user.id" class="ind-card p-4 flex justify-between items-center group">
+                    <div v-for="user in staffList.filter(u => u.role !== 'vendor')" :key="user.id" class="ind-card p-4 flex justify-between items-center group">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs" :class="user.role==='vendor'?'bg-[rgba(210,153,34,0.1)] text-[#d29922] border border-[#d29922]':'bg-[#161b22] border border-[#30363d] text-[#8b949e]'">{{ user.name[0] }}</div>
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs bg-[#161b22] border border-[#30363d] text-[#8b949e]">{{ user.name[0] }}</div>
                             <div>
                                 <p class="font-bold text-sm text-[#e6edf3]">{{ user.name }}</p>
                                 <p class="text-[10px] text-[#8b949e] font-mono"><span class="bg-[#30363d] px-1 rounded text-[#c9d1d9]">{{ user.login_id }}</span> • {{ user.role.toUpperCase() }}</p>
@@ -1120,12 +1108,6 @@
      * =============================================================================
      * KMC SiteOps Frontend Logic (V11.0 Integrated Version)
      * =============================================================================
-     * 100% Original Logic Retained + New Features:
-     * - [A1] Targeted Assignment (Directed to User/Team)
-     * - [A2] Priority & Deadline Logic
-     * - [A3] Task Verification Loop
-     * - [B1] Notification Center
-     * - [B2] Shift Handover System
      */
     
     const { createApp, ref, computed, nextTick, onMounted } = Vue;
@@ -1144,7 +1126,7 @@
             const currentUser = ref(null);
             const loginForm = ref({ id: '', password: '' });
             const currentView = ref('tasks');
-            const activeTeamTab = ref('internal');
+            const activeTeamTab = ref('internal'); // 实际上这个变量现在用处不大了，但保留兼容性
             
             const showStorageModal = ref(false);
             const storageUsageCount = ref(0);
@@ -1174,6 +1156,9 @@
             const emergencyForm = ref({ type:'', note:'', photos:[], translated:false });
             const violationForm = ref({ vendor:'', type:'Sleeping on Duty' });
             const executionForm = ref({ note:'', photos:[], translated:false });
+            
+            // New Supervision Form State
+            const supervisionForm = ref({ vendor:'', note:'', photos:[], translated:false });
             
             const filterType = ref('all');
             const showListManager = ref(false);
@@ -1266,7 +1251,7 @@
             });
             const listManagerTitle = computed(() => {
                 if(listManagerType.value==='teams') return 'Internal Teams / 内部队伍';
-                if(listManagerType.value==='vendors') return 'External Vendors / 外部合作商';
+                if(listManagerType.value==='vendors') return 'Manage Vendor List / 管理分包商名单';
                 if(listManagerType.value==='violationTypes') return 'Violation Types / 违规类型';
                 return 'Incident Types / 事故类型';
             });
@@ -1357,7 +1342,10 @@
             };
 
             const verifyTranslate = (formName) => {
-                const target = formName === 'emergencyForm' ? emergencyForm.value : executionForm.value;
+                let target;
+                if (formName === 'emergencyForm') target = emergencyForm.value;
+                else if (formName === 'executionForm') target = executionForm.value;
+                else if (formName === 'supervisionForm') target = supervisionForm.value;
                 autoTranslate('note', target);
             };
             
@@ -1390,7 +1378,7 @@
                     const data = await response.json();
                     if (data && data.responseData && data.responseData.translatedText) {
                         obj[field] = `${originalText} (${data.responseData.translatedText})`;
-                        if(obj === emergencyForm.value || obj === executionForm.value) obj.translated = true;
+                        if(obj === emergencyForm.value || obj === executionForm.value || obj === supervisionForm.value) obj.translated = true;
                     } else { throw new Error("Translation empty"); }
                 } catch (err) {
                     obj[field] = originalText; 
@@ -1546,6 +1534,43 @@
                 isLoading.value = false;
             };
 
+            // ---- New Supervision Logic ----
+            const goToSupervision = () => {
+                supervisionForm.value = { vendor: '', note: '', photos: [], translated: false };
+                hasSignedOfficer.value = false;
+                hasSignedVendor.value = false;
+                sigData.value = { officer: null, vendor: null };
+                currentView.value = 'supervision';
+            };
+
+            const handlePhotoUploadSupervision = async (e) => { 
+                const f=e.target.files[0]; 
+                if(f){ const d=await compressAndWatermark(f); supervisionForm.value.photos.push(d); } 
+            };
+
+            const submitSupervision = async () => {
+                if(!isTranslated(supervisionForm.value.note)) return alert("Translate first!");
+                if(!supervisionForm.value.vendor) return alert("Select Vendor");
+                if(!hasSignedOfficer.value || !hasSignedVendor.value) return alert("Signatures missing");
+
+                isLoading.value = true;
+                const payload = {
+                    type: 'supervision', 
+                    title: `INSPECTION: ${supervisionForm.value.vendor}`,
+                    note: supervisionForm.value.note, 
+                    staff_name: currentUser.value.name, 
+                    staff_id: currentUser.value.login_id,
+                    time: formatTime(), 
+                    photos: supervisionForm.value.photos, 
+                    sigs: sigData.value,
+                    status: 'pending'
+                };
+                const { error } = await _supabase.from('kmc_submissions').insert([payload]);
+                if(error) alert("Failed: " + error.message); else { alert("INSPECTION RECORDED"); currentView.value='reports'; fetchData(); }
+                isLoading.value = false;
+            };
+            // -------------------------------
+
             const openListManager = (t) => { listManagerType.value=t; showListManager.value=true; newItemName.value=''; };
             const addListItem = () => { if(newItemName.value){ currentEditingList.value.push(newItemName.value); newItemName.value=''; }}; 
             const removeListItem = (i) => { if(confirm("Confirm Delete?")) { currentEditingList.value.splice(i,1); }};
@@ -1581,7 +1606,11 @@
             const handlePhotoUpload = async (e) => { const f=e.target.files[0]; if(f){ const d=await compressAndWatermark(f); emergencyForm.value.photos.push(d); } };
             const handlePhotoUploadExec = async (e) => { const f=e.target.files[0]; if(f){ const d=await compressAndWatermark(f); executionForm.value.photos.push(d); } };
             const removePhoto = (formName, idx) => {
-                const target = formName === 'emergencyForm' ? emergencyForm.value : executionForm.value;
+                let target;
+                if (formName === 'emergencyForm') target = emergencyForm.value;
+                else if (formName === 'executionForm') target = executionForm.value;
+                else if (formName === 'supervisionForm') target = supervisionForm.value;
+                
                 if(confirm("Delete Photo?")) target.photos.splice(idx, 1);
             };
 
@@ -1645,16 +1674,16 @@
             // Helper for UI
             const getPriorityBorderClass = (p) => p==='high'?'border-l-[#da3633]':(p==='low'?'border-l-[#1f6feb]':'border-l-[#d29922]');
             const getPriorityBadgeClass = (p) => p==='high'?'p-high':(p==='low'?'p-low':'p-medium');
-            const getStatusBorderColor = (s) => s.status==='verified'?'border-l-[#238636]':(s.type==='emergency'?'border-l-[#da3633]':'border-l-[#d29922]');
+            const getStatusBorderColor = (s) => s.status==='verified'?'border-l-[#238636]':(s.type==='emergency'?'border-l-[#da3633]':(s.type==='supervision'?'border-l-[#a371f7]':'border-l-[#d29922]'));
             const getUserName = (id) => { const u = staffList.value.find(x=>x.login_id===id); return u?u.name:id; };
 
             return {
-                isLoading, netStatus, currentUser, loginForm, currentView, staffList, teamList, vendorList, emergencyTypes, customViolationTypes, tasks, submissions, unreadAlerts, isManagement, sortedTasks, activeTeamTab, showListManager, listManagerType, currentEditingList, listManagerTitle, newItemName, emergencyForm, tempUser, tempTask, violationForm, executionForm, filterType, filteredSubmissions, showSigModal, sigTitle, hasSignedOfficer, hasSignedVendor, tempExecution, showUserModal, userModalMode, showPwdModal, pwdForm,
+                isLoading, netStatus, currentUser, loginForm, currentView, staffList, teamList, vendorList, emergencyTypes, customViolationTypes, tasks, submissions, unreadAlerts, isManagement, sortedTasks, activeTeamTab, showListManager, listManagerType, currentEditingList, listManagerTitle, newItemName, emergencyForm, tempUser, tempTask, violationForm, executionForm, supervisionForm, filterType, filteredSubmissions, showSigModal, sigTitle, hasSignedOfficer, hasSignedVendor, tempExecution, showUserModal, userModalMode, showPwdModal, pwdForm,
                 showStorageModal, storageUsageCount, storageLimit, storagePercent, hasBackedUp, getStorageColor, getStorageColorClass, exportDatabase, clearDatabase,
                 // New Features
                 showHandoverModal, activeHandovers, notifications, showNotifModal, handoverNote,
-                handleLogin, handleLogout, goBack, verifyTranslate, autoTranslate, goToEmergencyForm, submitEmergency, openListManager, addListItem, removeListItem, handlePhotoUpload, handlePhotoUploadExec, goToTaskForm, saveTaskToCloud, deleteTaskFromCloud, goToViolationForm, submitViolation, openSigModal, closeSigModal, clearSignature, saveSignature, goToTaskExec, submitExecution, removePhoto, verifySubmission, openUserModal, saveUserToCloud, deleteUser, changePassword, generatePDF, fetchData, isTranslated,
-                getPriorityBorderClass, getPriorityBadgeClass, getStatusBorderColor, getUserName, acknowledgeHandover, submitHandover
+                handleLogin, handleLogout, goBack, verifyTranslate, autoTranslate, goToEmergencyForm, submitEmergency, openListManager, addListItem, removeListItem, handlePhotoUpload, handlePhotoUploadExec, handlePhotoUploadSupervision, goToTaskForm, saveTaskToCloud, deleteTaskFromCloud, goToViolationForm, submitViolation, openSigModal, closeSigModal, clearSignature, saveSignature, goToTaskExec, submitExecution, removePhoto, verifySubmission, openUserModal, saveUserToCloud, deleteUser, changePassword, generatePDF, fetchData, isTranslated,
+                getPriorityBorderClass, getPriorityBadgeClass, getStatusBorderColor, getUserName, acknowledgeHandover, submitHandover, goToSupervision, submitSupervision
             };
         }
     }).mount('#app');
