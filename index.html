@@ -174,6 +174,17 @@
         .input-wrapper.textarea .trans-btn { 
             top: 10px; 
         }
+        
+        /* 针对 textarea input-wrapper 的特殊调整，确保内容不被按钮遮挡 */
+        .input-wrapper.textarea .ind-input {
+             padding-right: 12px; /* textarea 不需要右侧 padding，因为按钮在右上角 */
+        }
+        /* 确保 textarea 中的翻译按钮定位在右上角 */
+        .input-wrapper.textarea .trans-btn {
+            top: 10px; /* 调整高度以避开 label */
+            right: 8px;
+        }
+
 
         /* 按钮系统 */
         .btn { 
@@ -829,18 +840,14 @@
                         </div>
                     </div>
 
-                    <div class="input-wrapper">
-                        <input v-model="tempTask.content" class="ind-input" :class="isTranslated(tempTask.content)?'translated':'untranslated'" placeholder="Task Content / 任务内容">
+                    <div class="input-wrapper textarea mb-4">
+                        <label class="block text-[10px] font-bold text-[#8b949e] uppercase mb-1">Task Content & Check Items / 任务内容及检查项</label>
+                        <textarea v-model="tempTask.content" class="ind-input h-32 p-3" :class="isTranslated(tempTask.content)?'translated':'untranslated'" placeholder="Enter task content and items to check... / 输入任务内容以及需要检查的具体项目..."></textarea>
                         <button @click="autoTranslate('content', tempTask)" class="trans-btn" :class="isTranslated(tempTask.content)?'done':'pending'">
                             <i class="fas" :class="isTranslated(tempTask.content)?'fa-check':'fa-language'"></i> {{ isTranslated(tempTask.content)?'OK':'A/文' }}
                         </button>
                     </div>
-                    <div class="input-wrapper">
-                        <input v-model="tempTask.items" class="ind-input" :class="isTranslated(tempTask.items)?'translated':'untranslated'" placeholder="Check Items / 检查项目">
-                        <button @click="autoTranslate('items', tempTask)" class="trans-btn" :class="isTranslated(tempTask.items)?'done':'pending'">
-                            <i class="fas" :class="isTranslated(tempTask.items)?'fa-check':'fa-language'"></i> {{ isTranslated(tempTask.items)?'OK':'A/文' }}
-                        </button>
-                    </div>
+
                     <div class="input-wrapper textarea">
                         <textarea v-model="tempTask.standard" class="ind-input h-24 p-3" :class="isTranslated(tempTask.standard)?'translated':'untranslated'" placeholder="Execution Standard / 执行标准"></textarea>
                         <button @click="autoTranslate('standard', tempTask)" class="trans-btn" :class="isTranslated(tempTask.standard)?'done':'pending'">
@@ -851,14 +858,14 @@
                         <span class="text-xs text-[#8b949e]">Photo / 拍照</span>
                         <input type="checkbox" v-model="tempTask.require_photo" class="w-4 h-4 accent-[#1f6feb]">
                     </div>
+                    
                     <button @click="saveTaskToCloud(tempTask, false)" class="btn btn-primary w-full py-3 text-sm" 
-                            :disabled="!isTranslated(tempTask.title) || !isTranslated(tempTask.content) || !isTranslated(tempTask.items) || !isTranslated(tempTask.standard)">
+                            :disabled="!isTranslated(tempTask.title) || !isTranslated(tempTask.content) || !isTranslated(tempTask.standard)">
                         <i v-if="!isTranslated(tempTask.title) || !isTranslated(tempTask.content)" class="fas fa-lock mr-2"></i>
                         {{ (!isTranslated(tempTask.title) || !isTranslated(tempTask.content)) ? 'TRANSLATE ALL FIRST / 请翻译所有项' : 'SAVE & ASSIGN / 保存并发布' }}
                     </button>
                 </div>
             </div>
-
             <div v-if="currentView === 'emergency_form'" class="min-h-full">
                 <div class="p-4 border-b border-[#30363d] mb-4 bg-[rgba(218,54,51,0.1)] sticky top-0 z-10 border-l-4 border-l-[#da3633]">
                     <h2 class="text-lg font-bold text-[#da3633] mb-1"><i class="fas fa-radiation-alt mr-2"></i>SPECIAL SITUATION</h2>
