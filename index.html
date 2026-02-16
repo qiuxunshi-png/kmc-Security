@@ -106,8 +106,8 @@
             left: 0; top: 0; bottom: 0; width: 3px; z-index: 10;
         }
         .log-card.type-routine::before { background: var(--primary); box-shadow: 0 0 14px rgba(91,141,239,0.45); }
-        .log-card.type-temp::before   { background: var(--warning); box-shadow: 0 0 14px rgba(245,183,49,0.45); }
-        .log-card.type-sos::before    { background: var(--danger);  box-shadow: 0 0 14px rgba(240,107,129,0.45); }
+        .log-card.type-temp::before    { background: var(--warning); box-shadow: 0 0 14px rgba(245,183,49,0.45); }
+        .log-card.type-sos::before     { background: var(--danger);  box-shadow: 0 0 14px rgba(240,107,129,0.45); }
         .log-card.type-inspect::before{ background: var(--inspect); box-shadow: 0 0 14px rgba(167,139,250,0.45); }
         .log-card .border-b { border-color: rgba(255,255,255,0.04) !important; }
         .log-card .bg-slate-800\/30 { background-color: transparent !important; }
@@ -948,7 +948,7 @@
                             </div>
                         </div>
                      </div>
-                     
+                      
                     <div class="pt-4 border-t border-slate-800 pb-6">
                         <button @click="submitExecution" 
                                 :disabled="(!isOffline && !checkTranslationStatus(executionForm.note)) || 
@@ -1510,13 +1510,39 @@
             const nonFixedPresets = ['Package Pickup / 取快递', 'Visitor Escort / 访客护送', 'Emergency Drill / 应急演练', 'Traffic Control / 交通疏导', 'Equipment Check / 设备检查'];
 
             // === Integrated V13.9 Data Config ===
+            // === [Updated] 2026-02 Final Data from Image ===
             const factoryConfig = {
                 companies: ['EASYRING SECURITY', 'SHOCK SECURITY', 'FOCUS SECURITY'],
                 sosTypes: ['Car Accident / 车祸', 'Fire / 火灾', 'Intruder / 入侵', 'Medical / 医疗', 'Snake / 蛇患'],
                 pointsMap: {
-                    'EASYRING SECURITY': [{name: 'Phase I Plant', note: '24h check'}, {name: 'Phase II Plant', note: 'Check generators'}, {name: 'Main Gate', note: 'Check entry'}],
-                    'SHOCK SECURITY': [{name: 'New Office', note: '24h shift'}, {name: 'South Boomgate', note: 'Check vehicles'}],
-                    'FOCUS SECURITY': [{name: 'Single Cottage', note: 'Front Door'}, {name: 'Guest House', note: 'Night shift'}]
+                    'EASYRING SECURITY': [
+                        { name: 'Phase I Plant / 一期工厂', note: '24h day-night shift, anti-theft patrol.' },
+                        { name: 'Phase II Plant / 二期工厂', note: '24h shift. Phase 2 & Generators area. 1 dog night shift.' },
+                        { name: 'Phase II East Boomgate / 二期东侧栏杆', note: '24h shift. Stop people getting inside area.' },
+                        { name: 'Phase II West Boomgate / 二期西侧栏杆', note: '24h shift, anti-theft.' },
+                        { name: 'Phase II Concentrator Warehouse / 二期浓缩机仓库', note: '24h shift, anti-theft.' },
+                        { name: 'Rarlon Industry Area / 拉尔隆工业区', note: '24h shift, anti-theft.' },
+                        { name: 'Concentrate Weighbridge / 集中式地磅', note: '24h shift, anti-theft.' },
+                        { name: 'Open Pit & National Road Intersection / 露天矿路口', note: '24h shift, anti-theft. Excavator security.' },
+                        { name: 'South Boomgate / 南侧栏杆', note: '24h shift, anti-theft. 1 gun 24hour.' },
+                        { name: 'New Office / 新办公室', note: '24h shift. Day: Guard with gun at KMC office. Night: Guard with gun patrol around.' },
+                        { name: 'Post Office / 邮局', note: '24h shift, anti-theft.' },
+                        { name: 'Dry Stack Tailings Dam / 干堆尾矿坝', note: '12h night shift, anti-theft, patrol.' }
+                    ],
+                    'SHOCK SECURITY': [
+                        { name: 'New Office / 新办公室', note: '24h shift. 3 guards day, 2 guards night. Anti-theft.' },
+                        { name: 'South Boomgate / 南布姆盖特', note: '12h night shift, anti-theft.' },
+                        { name: 'New Fuel Station / 新加油站', note: '12h night shift, anti-theft.' },
+                        { name: 'Phase II New Water Dam Pump / 二期新水坝泵', note: '24h shift, anti-theft.' },
+                        { name: 'Phase One Main Gate / 一期主门', note: '24h shift. Check vehicles and people at boomgate.' }
+                    ],
+                    'FOCUS SECURITY': [
+                        { name: 'Single Cottage Side Entrance / 单人小屋侧门', note: '24h shift, anti-theft. Back door.' },
+                        { name: 'A1/A23', note: '24h shift, anti-theft.' },
+                        { name: 'A47/A50', note: '24h shift, anti-theft.' },
+                        { name: 'Guest House / 招待所', note: '12h night shift, anti-theft.' },
+                        { name: 'Single Cottage & Mine Store / 单人小屋和商店', note: '24h shift. Includes main entrance of single dormitory. Front door.' }
+                    ]
                 },
                 manualRankings: [
                     { title: 'Most Patrols', desc: 'Highest frequency', list: [{name:'Kudat', val:'150'}, {name:'EDWIN', val:'120'}] },
@@ -1759,7 +1785,7 @@
                         margin: [10, 10, 10, 10], // mm
                         filename: filename,
                         image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: {
+                        html2canvas: { 
                             scale: 2, // 提高清晰度
                             useCORS: true, // 允许跨域图片
                             logging: false,
@@ -2136,7 +2162,7 @@
             };
 
             return {
-                toast, showToast, // <--- 确保添加了这两项
+                toast, showToast, 
                 currentUser, loginForm, currentView, staffList, sortedTasks, submissions, expanded, isManagement, 
                 tempTask, form, config, selectedCompany, tempExecution, executionForm, showFilter, filters, filteredSubmissions,
                 taskMode, reportTab, showSigModal, hasSignedVendor, hasSignedTarget, isLoading, internalStaff, nonFixedPresets, showSosConfig, newSosType,
